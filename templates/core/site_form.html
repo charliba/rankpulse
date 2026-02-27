@@ -172,6 +172,627 @@
             </div>
         </div>
 
+        <!-- ========================================================
+             GUIA COMPLETO: DNS + Google Search Console
+             Bilíngue (PT/EN) — Alpine.js toggle
+             ======================================================== -->
+        <div x-data="{ lang: 'pt', openSection: null }" class="bg-gradient-to-br from-cyan-50 via-white to-indigo-50 rounded-xl shadow-sm border-2 border-cyan-200 mb-6 overflow-hidden">
+            <!-- Guide Header -->
+            <div class="bg-gradient-to-r from-cyan-600 to-indigo-600 px-6 py-4">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold text-base" x-show="lang === 'pt'">Guia de Configuração DNS + Google Search Console</h3>
+                            <h3 class="text-white font-bold text-base" x-show="lang === 'en'">DNS + Google Search Console Setup Guide</h3>
+                            <p class="text-cyan-100 text-xs mt-0.5" x-show="lang === 'pt'">Passo a passo para verificar seu site no Google</p>
+                            <p class="text-cyan-100 text-xs mt-0.5" x-show="lang === 'en'">Step-by-step to verify your site with Google</p>
+                        </div>
+                    </div>
+                    <!-- Language Toggle -->
+                    <div class="flex items-center bg-white/20 backdrop-blur rounded-lg p-0.5">
+                        <button type="button" @click="lang = 'pt'"
+                                :class="lang === 'pt' ? 'bg-white text-indigo-700 shadow-sm' : 'text-white hover:text-cyan-100'"
+                                class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5">
+                            <span>🇧🇷</span> PT
+                        </button>
+                        <button type="button" @click="lang = 'en'"
+                                :class="lang === 'en' ? 'bg-white text-indigo-700 shadow-sm' : 'text-white hover:text-cyan-100'"
+                                class="px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-1.5">
+                            <span>🇺🇸</span> EN
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-3">
+
+                <!-- ─── SECTION 1: DNS Overview ─────────────────────── -->
+                <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <button type="button" @click="openSection = openSection === 1 ? null : 1"
+                            class="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-cyan-100 text-cyan-700 text-xs font-bold">1</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'pt'">O que é DNS e por que configurar?</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'en'">What is DNS and why configure it?</span>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" :class="openSection === 1 && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="openSection === 1" x-transition class="px-5 pb-5 border-t border-gray-100">
+                        <!-- PT -->
+                        <div x-show="lang === 'pt'" class="mt-4 space-y-3 text-sm text-gray-700 leading-relaxed">
+                            <p>O <strong>DNS (Domain Name System)</strong> é a "lista telefônica" da internet — ele traduz o nome do seu site (ex: <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-indigo-600">meusite.com</code>) para o endereço IP do servidor.</p>
+                            <p>Para o Google Search Console funcionar, você precisa <strong>provar que é dono do domínio</strong> adicionando um registro TXT especial no DNS. Mas o TXT não é o único registro importante:</p>
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-3">
+                                <p class="font-semibold text-amber-800 text-xs uppercase tracking-wider mb-2">⚠️ Registros DNS essenciais para seu site</p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs">
+                                        <thead><tr class="border-b border-amber-200">
+                                            <th class="text-left py-1.5 pr-3 font-bold text-amber-900">Tipo</th>
+                                            <th class="text-left py-1.5 pr-3 font-bold text-amber-900">Host / Nome</th>
+                                            <th class="text-left py-1.5 pr-3 font-bold text-amber-900">Valor</th>
+                                            <th class="text-left py-1.5 font-bold text-amber-900">Para que serve</th>
+                                        </tr></thead>
+                                        <tbody class="text-amber-800">
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">A</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">IP do servidor</td><td class="py-2">Aponta o domínio para seu servidor</td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">CNAME</td><td class="py-2 pr-3 font-mono">www</td><td class="py-2 pr-3 font-mono">seusite.com</td><td class="py-2">Redireciona www para o domínio principal</td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">TXT</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">google-site-verification=XXXX</td><td class="py-2"><strong>Verificação do Search Console</strong></td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">TXT</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">v=spf1 include:_spf.google.com ~all</td><td class="py-2">SPF — autenticação de email</td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">MX</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">mail.seusite.com (prioridade 10)</td><td class="py-2">Recepção de emails</td></tr>
+                                            <tr><td class="py-2 pr-3 font-mono font-bold">AAAA</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">IPv6 do servidor</td><td class="py-2">Acesso IPv6 (se disponível)</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- EN -->
+                        <div x-show="lang === 'en'" class="mt-4 space-y-3 text-sm text-gray-700 leading-relaxed">
+                            <p><strong>DNS (Domain Name System)</strong> is the internet's "phone book" — it translates your site name (e.g., <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono text-indigo-600">mysite.com</code>) into your server's IP address.</p>
+                            <p>For Google Search Console to work, you need to <strong>prove domain ownership</strong> by adding a special TXT record to your DNS. But TXT isn't the only important record:</p>
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-3">
+                                <p class="font-semibold text-amber-800 text-xs uppercase tracking-wider mb-2">⚠️ Essential DNS records for your site</p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs">
+                                        <thead><tr class="border-b border-amber-200">
+                                            <th class="text-left py-1.5 pr-3 font-bold text-amber-900">Type</th>
+                                            <th class="text-left py-1.5 pr-3 font-bold text-amber-900">Host / Name</th>
+                                            <th class="text-left py-1.5 pr-3 font-bold text-amber-900">Value</th>
+                                            <th class="text-left py-1.5 font-bold text-amber-900">Purpose</th>
+                                        </tr></thead>
+                                        <tbody class="text-amber-800">
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">A</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">Server IP</td><td class="py-2">Points domain to your server</td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">CNAME</td><td class="py-2 pr-3 font-mono">www</td><td class="py-2 pr-3 font-mono">yoursite.com</td><td class="py-2">Redirects www to main domain</td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">TXT</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">google-site-verification=XXXX</td><td class="py-2"><strong>Search Console verification</strong></td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">TXT</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">v=spf1 include:_spf.google.com ~all</td><td class="py-2">SPF — email authentication</td></tr>
+                                            <tr class="border-b border-amber-100"><td class="py-2 pr-3 font-mono font-bold">MX</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">mail.yoursite.com (priority 10)</td><td class="py-2">Email receiving</td></tr>
+                                            <tr><td class="py-2 pr-3 font-mono font-bold">AAAA</td><td class="py-2 pr-3 font-mono">@</td><td class="py-2 pr-3 font-mono">Server IPv6</td><td class="py-2">IPv6 access (if available)</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── SECTION 2: GSC Verification Step-by-Step ────── -->
+                <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <button type="button" @click="openSection = openSection === 2 ? null : 2"
+                            class="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">2</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'pt'">Verificar no Google Search Console (Passo a Passo)</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'en'">Verify on Google Search Console (Step by Step)</span>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" :class="openSection === 2 && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="openSection === 2" x-transition class="px-5 pb-5 border-t border-gray-100">
+                        <!-- PT -->
+                        <div x-show="lang === 'pt'" class="mt-4 space-y-4 text-sm text-gray-700">
+                            <!-- Step 1 -->
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">1</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Acesse o Google Search Console</p>
+                                    <p class="text-gray-600 mt-1">Vá para <a href="https://search.google.com/search-console" target="_blank" rel="noopener" class="text-indigo-600 underline font-medium hover:text-indigo-800">search.google.com/search-console</a> e faça login com sua conta Google.</p>
+                                </div>
+                            </div>
+                            <!-- Step 2 -->
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">2</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Adicione uma propriedade tipo "Domínio"</p>
+                                    <p class="text-gray-600 mt-1">Clique em <strong>"Adicionar propriedade"</strong> → escolha <strong>"Domínio"</strong> (lado esquerdo) → digite seu domínio sem https (ex: <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">meusite.com</code>).</p>
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2 text-xs text-blue-800">
+                                        <strong>💡 Dica:</strong> A propriedade tipo "Domínio" é preferível pois cobre todas as variações (http, https, www, sem www) automaticamente.
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Step 3 -->
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">3</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Copie o código de verificação TXT</p>
+                                    <p class="text-gray-600 mt-1">O Google vai mostrar um registro TXT como:</p>
+                                    <div class="bg-gray-900 rounded-lg p-3 mt-2 font-mono text-xs text-green-400 overflow-x-auto">
+                                        google-site-verification=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+                                    </div>
+                                    <p class="text-gray-500 mt-1.5 text-xs">Clique em <strong>"COPIAR"</strong> para copiar o valor completo.</p>
+                                </div>
+                            </div>
+                            <!-- Step 4 -->
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">4</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Adicione o registro TXT no DNS do seu domínio</p>
+                                    <p class="text-gray-600 mt-1">Acesse o painel do seu provedor de domínio (Hostinger, GoDaddy, Namecheap, Registro.br, Cloudflare, etc.) e vá em <strong>DNS → Adicionar registro</strong>:</p>
+                                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mt-2">
+                                        <div class="grid grid-cols-3 gap-2 text-xs">
+                                            <div>
+                                                <span class="font-bold text-gray-500 uppercase tracking-wider block mb-1">Tipo</span>
+                                                <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-mono font-bold inline-block">TXT</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-bold text-gray-500 uppercase tracking-wider block mb-1">Host / Nome</span>
+                                                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded font-mono font-bold inline-block">@</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-bold text-gray-500 uppercase tracking-wider block mb-1">Valor / Target</span>
+                                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded font-mono text-[10px] inline-block break-all">google-site-verification=SEU_CÓDIGO</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-gray-500 text-xs mt-3">TTL: deixe no padrão (3600 ou "Auto")</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Step 5 -->
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">5</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Aguarde a propagação e clique em "Verificar"</p>
+                                    <p class="text-gray-600 mt-1">A propagação DNS pode levar de <strong>5 minutos a 48 horas</strong>. Normalmente funciona em menos de 1 hora. Volte ao Search Console e clique em <strong>"VERIFICAR"</strong>.</p>
+                                    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2 text-xs text-emerald-800">
+                                        <strong>✅ Após verificar:</strong> Marque o campo "GSC Verificado" acima e preencha a "GSC Site URL" com o domínio exato que verificou (ex: <code class="bg-emerald-100 px-1 rounded font-mono">https://meusite.com/</code>).
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- EN -->
+                        <div x-show="lang === 'en'" class="mt-4 space-y-4 text-sm text-gray-700">
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">1</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Go to Google Search Console</p>
+                                    <p class="text-gray-600 mt-1">Visit <a href="https://search.google.com/search-console" target="_blank" rel="noopener" class="text-indigo-600 underline font-medium hover:text-indigo-800">search.google.com/search-console</a> and sign in with your Google account.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">2</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Add a "Domain" property</p>
+                                    <p class="text-gray-600 mt-1">Click <strong>"Add property"</strong> → choose <strong>"Domain"</strong> (left side) → type your domain without https (e.g., <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">mysite.com</code>).</p>
+                                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2 text-xs text-blue-800">
+                                        <strong>💡 Tip:</strong> The "Domain" property type is preferred because it covers all variations (http, https, www, non-www) automatically.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">3</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Copy the TXT verification code</p>
+                                    <p class="text-gray-600 mt-1">Google will show a TXT record like:</p>
+                                    <div class="bg-gray-900 rounded-lg p-3 mt-2 font-mono text-xs text-green-400 overflow-x-auto">
+                                        google-site-verification=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+                                    </div>
+                                    <p class="text-gray-500 mt-1.5 text-xs">Click <strong>"COPY"</strong> to copy the full value.</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">4</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Add the TXT record in your domain's DNS</p>
+                                    <p class="text-gray-600 mt-1">Go to your domain provider's panel (Hostinger, GoDaddy, Namecheap, Cloudflare, etc.) and navigate to <strong>DNS → Add record</strong>:</p>
+                                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mt-2">
+                                        <div class="grid grid-cols-3 gap-2 text-xs">
+                                            <div>
+                                                <span class="font-bold text-gray-500 uppercase tracking-wider block mb-1">Type</span>
+                                                <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-mono font-bold inline-block">TXT</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-bold text-gray-500 uppercase tracking-wider block mb-1">Host / Name</span>
+                                                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded font-mono font-bold inline-block">@</span>
+                                            </div>
+                                            <div>
+                                                <span class="font-bold text-gray-500 uppercase tracking-wider block mb-1">Value / Target</span>
+                                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded font-mono text-[10px] inline-block break-all">google-site-verification=YOUR_CODE</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-gray-500 text-xs mt-3">TTL: leave default (3600 or "Auto")</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center mt-0.5">5</span>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Wait for propagation and click "Verify"</p>
+                                    <p class="text-gray-600 mt-1">DNS propagation can take from <strong>5 minutes to 48 hours</strong>. It usually works within 1 hour. Go back to Search Console and click <strong>"VERIFY"</strong>.</p>
+                                    <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-2 text-xs text-emerald-800">
+                                        <strong>✅ After verifying:</strong> Check the "GSC Verified" field above and fill in the "GSC Site URL" with the exact domain you verified (e.g., <code class="bg-emerald-100 px-1 rounded font-mono">https://mysite.com/</code>).
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── SECTION 3: Complete DNS Configuration ───────── -->
+                <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <button type="button" @click="openSection = openSection === 3 ? null : 3"
+                            class="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">3</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'pt'">Configuração DNS Completa (Todos os Registros)</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'en'">Complete DNS Configuration (All Records)</span>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" :class="openSection === 3 && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="openSection === 3" x-transition class="px-5 pb-5 border-t border-gray-100">
+                        <!-- PT -->
+                        <div x-show="lang === 'pt'" class="mt-4 space-y-5 text-sm text-gray-700">
+                            <p>Além do TXT do Search Console, configure estes registros no DNS do seu provedor para que tudo funcione perfeitamente:</p>
+
+                            <!-- Record A -->
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">A</span>
+                                    <span class="font-semibold text-gray-900">Registro A — Apontar domínio para IP</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Obrigatório. Conecta seu domínio ao IP do servidor de hospedagem.</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Valor</span><code class="font-bold text-blue-700">IP do servidor (ex: 123.45.67.89)</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                                <p class="text-gray-500 text-xs mt-2">📍 Encontre o IP na sua hospedagem: Hostinger → hPanel → Hosting → Dashboard → IP Address</p>
+                            </div>
+
+                            <!-- Record CNAME -->
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">CNAME</span>
+                                    <span class="font-semibold text-gray-900">Registro CNAME — Redirecionar www</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Recomendado. Faz <code class="bg-gray-100 px-1 rounded">www.seusite.com</code> apontar para <code class="bg-gray-100 px-1 rounded">seusite.com</code>.</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">www</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Valor</span><code class="font-bold text-purple-700">seusite.com</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                            </div>
+
+                            <!-- Record TXT GSC -->
+                            <div class="bg-indigo-50 rounded-lg border-2 border-indigo-300 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">TXT</span>
+                                    <span class="font-semibold text-gray-900">🔍 Verificação Google Search Console</span>
+                                    <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Obrigatório</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Este é o registro que o Google pede na tela de verificação. É o passo mais importante.</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-indigo-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Valor</span><code class="font-bold text-indigo-700">google-site-verification=SEU_CÓDIGO_AQUI</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                            </div>
+
+                            <!-- Record TXT SPF -->
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">TXT</span>
+                                    <span class="font-semibold text-gray-900">SPF — Autenticação de Email</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Recomendado. Previne que outros enviem emails fingindo ser seu domínio (spam/phishing).</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Valor</span><code class="font-bold text-green-700 break-all">v=spf1 include:_spf.google.com ~all</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                                <p class="text-gray-500 text-xs mt-2">💡 Se usa outro provedor de email (Zoho, Outlook, etc.), ajuste o <code class="bg-gray-100 px-1 rounded">include:</code> conforme o provedor.</p>
+                            </div>
+
+                            <!-- Record MX -->
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">MX</span>
+                                    <span class="font-semibold text-gray-900">MX — Recepção de Email</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Necessário se you usa email com domínio próprio (contato@seusite.com).</p>
+                                <div class="grid grid-cols-4 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Valor</span><code class="font-bold text-orange-700">Servidor de email</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Prioridade</span><code class="font-bold">10</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                                <div class="bg-orange-50 border border-orange-200 rounded p-2 mt-2 text-xs text-orange-800">
+                                    <strong>Exemplos por provedor:</strong><br>
+                                    • Google Workspace: <code class="font-mono">aspmx.l.google.com</code> (prior. 1)<br>
+                                    • Hostinger: <code class="font-mono">mx1.hostinger.com</code> (prior. 5)<br>
+                                    • Zoho: <code class="font-mono">mx.zoho.com</code> (prior. 10)
+                                </div>
+                            </div>
+
+                            <!-- Record AAAA -->
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-gray-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">AAAA</span>
+                                    <span class="font-semibold text-gray-900">AAAA — IPv6 (Opcional)</span>
+                                </div>
+                                <p class="text-gray-600 text-xs">Somente se seu servidor tem IPv6. Similar ao Registro A, mas para endereços IPv6. Não é obrigatório na maioria dos casos.</p>
+                            </div>
+
+                            <!-- Checklist -->
+                            <div class="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4">
+                                <p class="font-bold text-emerald-800 text-sm mb-3">✅ Checklist DNS Completo</p>
+                                <div class="space-y-2 text-xs text-emerald-800">
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Registro <strong>A</strong> apontando para IP do servidor</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Registro <strong>CNAME</strong> para www → domínio</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Registro <strong>TXT</strong> google-site-verification (Search Console)</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Registro <strong>TXT</strong> SPF para autenticação de email</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Registro <strong>MX</strong> configurado (se usa email do domínio)</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Verificação concluída no Search Console</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Campo "GSC Verificado" marcado acima</span></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EN -->
+                        <div x-show="lang === 'en'" class="mt-4 space-y-5 text-sm text-gray-700">
+                            <p>Besides the Search Console TXT record, configure these DNS records in your provider's panel for everything to work perfectly:</p>
+
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">A</span>
+                                    <span class="font-semibold text-gray-900">A Record — Point domain to IP</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Required. Connects your domain to the hosting server's IP address.</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Value</span><code class="font-bold text-blue-700">Server IP (e.g., 123.45.67.89)</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                                <p class="text-gray-500 text-xs mt-2">📍 Find IP in your hosting: Hostinger → hPanel → Hosting → Dashboard → IP Address</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">CNAME</span>
+                                    <span class="font-semibold text-gray-900">CNAME Record — Redirect www</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Recommended. Makes <code class="bg-gray-100 px-1 rounded">www.yoursite.com</code> point to <code class="bg-gray-100 px-1 rounded">yoursite.com</code>.</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">www</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Value</span><code class="font-bold text-purple-700">yoursite.com</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-indigo-50 rounded-lg border-2 border-indigo-300 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">TXT</span>
+                                    <span class="font-semibold text-gray-900">🔍 Google Search Console Verification</span>
+                                    <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Required</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">This is the record Google asks for on the verification screen. It's the most important step.</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-indigo-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Value</span><code class="font-bold text-indigo-700">google-site-verification=YOUR_CODE_HERE</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-green-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">TXT</span>
+                                    <span class="font-semibold text-gray-900">SPF — Email Authentication</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Recommended. Prevents others from sending emails pretending to be your domain (spam/phishing).</p>
+                                <div class="grid grid-cols-3 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Value</span><code class="font-bold text-green-700 break-all">v=spf1 include:_spf.google.com ~all</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                                <p class="text-gray-500 text-xs mt-2">💡 If you use another email provider (Zoho, Outlook, etc.), adjust the <code class="bg-gray-100 px-1 rounded">include:</code> accordingly.</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">MX</span>
+                                    <span class="font-semibold text-gray-900">MX — Email Receiving</span>
+                                </div>
+                                <p class="text-gray-600 text-xs mb-2">Required if you use email with your custom domain (contact@yoursite.com).</p>
+                                <div class="grid grid-cols-4 gap-2 text-xs bg-white rounded p-3 border border-gray-100">
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Host</span><code class="font-bold">@</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Value</span><code class="font-bold text-orange-700">Mail server</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">Priority</span><code class="font-bold">10</code></div>
+                                    <div><span class="text-gray-400 text-[10px] uppercase block">TTL</span><code>3600</code></div>
+                                </div>
+                                <div class="bg-orange-50 border border-orange-200 rounded p-2 mt-2 text-xs text-orange-800">
+                                    <strong>Examples by provider:</strong><br>
+                                    • Google Workspace: <code class="font-mono">aspmx.l.google.com</code> (priority 1)<br>
+                                    • Hostinger: <code class="font-mono">mx1.hostinger.com</code> (priority 5)<br>
+                                    • Zoho: <code class="font-mono">mx.zoho.com</code> (priority 10)
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-gray-600 text-white text-xs font-bold px-2 py-0.5 rounded font-mono">AAAA</span>
+                                    <span class="font-semibold text-gray-900">AAAA — IPv6 (Optional)</span>
+                                </div>
+                                <p class="text-gray-600 text-xs">Only if your server has IPv6. Similar to the A Record, but for IPv6 addresses. Not required in most cases.</p>
+                            </div>
+
+                            <!-- Checklist EN -->
+                            <div class="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4">
+                                <p class="font-bold text-emerald-800 text-sm mb-3">✅ Complete DNS Checklist</p>
+                                <div class="space-y-2 text-xs text-emerald-800">
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span><strong>A</strong> record pointing to server IP</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span><strong>CNAME</strong> record for www → domain</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span><strong>TXT</strong> google-site-verification (Search Console)</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span><strong>TXT</strong> SPF for email authentication</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span><strong>MX</strong> record configured (if using domain email)</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>Verification completed in Search Console</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="rounded text-emerald-600 border-emerald-300"><span>"GSC Verified" field checked above</span></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── SECTION 4: Provider-Specific DNS Guides ─────── -->
+                <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <button type="button" @click="openSection = openSection === 4 ? null : 4"
+                            class="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">4</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'pt'">Onde configurar DNS? (Por Provedor)</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'en'">Where to configure DNS? (By Provider)</span>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" :class="openSection === 4 && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="openSection === 4" x-transition class="px-5 pb-5 border-t border-gray-100">
+                        <!-- PT -->
+                        <div x-show="lang === 'pt'" class="mt-4 space-y-3 text-sm text-gray-700">
+                            <p>Cada provedor de domínio tem uma interface diferente. Aqui estão os caminhos para os mais comuns:</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟠 Hostinger</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed">hPanel → <strong>Domínios</strong> → selecione o domínio → <strong>DNS / Nameservers</strong> → <strong>Gerenciar registros DNS</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🔵 GoDaddy</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed"><strong>My Products</strong> → domínio → <strong>DNS</strong> → <strong>Manage DNS</strong> → <strong>Add Record</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟡 Namecheap</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed"><strong>Domain List</strong> → <strong>Manage</strong> → <strong>Advanced DNS</strong> → <strong>Add New Record</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟧 Cloudflare</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed">Dashboard → selecione o site → <strong>DNS</strong> → <strong>Records</strong> → <strong>Add record</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🇧🇷 Registro.br</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed"><strong>Meus domínios</strong> → clique no domínio → <strong>DNS</strong> → <strong>Editar zona</strong> → <strong>Nova entrada</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟢 Google Domains</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed">Domínio → <strong>DNS</strong> → <strong>Custom records</strong> → <strong>Manage custom records</strong></p>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 mt-2">
+                                <strong>💡 Não encontrou seu provedor?</strong> Procure por "DNS management" ou "Zone editor" no painel do seu provedor. Todos têm essa funcionalidade.
+                            </div>
+                        </div>
+                        <!-- EN -->
+                        <div x-show="lang === 'en'" class="mt-4 space-y-3 text-sm text-gray-700">
+                            <p>Each domain provider has a different interface. Here are the paths for the most common ones:</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟠 Hostinger</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed">hPanel → <strong>Domains</strong> → select domain → <strong>DNS / Nameservers</strong> → <strong>Manage DNS records</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🔵 GoDaddy</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed"><strong>My Products</strong> → domain → <strong>DNS</strong> → <strong>Manage DNS</strong> → <strong>Add Record</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟡 Namecheap</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed"><strong>Domain List</strong> → <strong>Manage</strong> → <strong>Advanced DNS</strong> → <strong>Add New Record</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟧 Cloudflare</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed">Dashboard → select site → <strong>DNS</strong> → <strong>Records</strong> → <strong>Add record</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🇧🇷 Registro.br</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed"><strong>My domains</strong> → click domain → <strong>DNS</strong> → <strong>Edit zone</strong> → <strong>New entry</strong></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                    <p class="font-bold text-gray-800 text-xs mb-1.5">🟢 Google Domains</p>
+                                    <p class="text-gray-600 text-xs leading-relaxed">Domain → <strong>DNS</strong> → <strong>Custom records</strong> → <strong>Manage custom records</strong></p>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 mt-2">
+                                <strong>💡 Can't find your provider?</strong> Search for "DNS management" or "Zone editor" in your provider's panel. All of them have this feature.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── SECTION 5: Troubleshooting ──────────────────── -->
+                <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                    <button type="button" @click="openSection = openSection === 5 ? null : 5"
+                            class="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition-colors text-left">
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center justify-center w-7 h-7 rounded-full bg-red-100 text-red-700 text-xs font-bold">5</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'pt'">Problemas Comuns e Soluções</span>
+                            <span class="font-semibold text-gray-800 text-sm" x-show="lang === 'en'">Common Problems and Solutions</span>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400 transition-transform" :class="openSection === 5 && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="openSection === 5" x-transition class="px-5 pb-5 border-t border-gray-100">
+                        <!-- PT -->
+                        <div x-show="lang === 'pt'" class="mt-4 space-y-3 text-sm text-gray-700">
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ "Falha na verificação de propriedade"</p>
+                                <p class="text-red-700 text-xs">O DNS ainda não propagou. Aguarde até 48h. Verifique se o tipo é TXT e o Host é <code class="font-mono bg-red-100 px-1 rounded">@</code> (não o domínio).</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ "Registro TXT não encontrado"</p>
+                                <p class="text-red-700 text-xs">Confira se copiou o valor completo (deve começar com <code class="font-mono bg-red-100 px-1 rounded">google-site-verification=</code>). Alguns provedores adicionam aspas — remova-as.</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ Site não abre (ERR_NAME_NOT_RESOLVED)</p>
+                                <p class="text-red-700 text-xs">O Registro A está incorreto ou faltando. Verifique se o IP do servidor está correto no seu provedor DNS.</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ www não funciona mas domínio sem www funciona</p>
+                                <p class="text-red-700 text-xs">Falta o CNAME. Adicione um registro CNAME com Host=<code class="font-mono bg-red-100 px-1 rounded">www</code> e Valor=<code class="font-mono bg-red-100 px-1 rounded">seudominio.com</code></p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 text-xs text-gray-600">
+                                <strong>🔧 Ferramenta de diagnóstico:</strong> Use <a href="https://toolbox.googleapps.com/apps/dig/" target="_blank" rel="noopener" class="text-indigo-600 underline">Google Admin Toolbox Dig</a> ou <a href="https://dnschecker.org/" target="_blank" rel="noopener" class="text-indigo-600 underline">DNS Checker</a> para verificar se seus registros já propagaram.
+                            </div>
+                        </div>
+                        <!-- EN -->
+                        <div x-show="lang === 'en'" class="mt-4 space-y-3 text-sm text-gray-700">
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ "Ownership verification failed"</p>
+                                <p class="text-red-700 text-xs">DNS hasn't propagated yet. Wait up to 48h. Make sure the type is TXT and Host is <code class="font-mono bg-red-100 px-1 rounded">@</code> (not the domain name).</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ "TXT record not found"</p>
+                                <p class="text-red-700 text-xs">Check that you copied the full value (must start with <code class="font-mono bg-red-100 px-1 rounded">google-site-verification=</code>). Some providers add quotes — remove them.</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ Site won't open (ERR_NAME_NOT_RESOLVED)</p>
+                                <p class="text-red-700 text-xs">The A Record is incorrect or missing. Verify your server's IP is correct in your DNS provider.</p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4 border border-red-200">
+                                <p class="font-bold text-red-800 text-xs mb-1">❌ www doesn't work but domain without www does</p>
+                                <p class="text-red-700 text-xs">Missing CNAME. Add a CNAME record with Host=<code class="font-mono bg-red-100 px-1 rounded">www</code> and Value=<code class="font-mono bg-red-100 px-1 rounded">yourdomain.com</code></p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 text-xs text-gray-600">
+                                <strong>🔧 Diagnostic tools:</strong> Use <a href="https://toolbox.googleapps.com/apps/dig/" target="_blank" rel="noopener" class="text-indigo-600 underline">Google Admin Toolbox Dig</a> or <a href="https://dnschecker.org/" target="_blank" rel="noopener" class="text-indigo-600 underline">DNS Checker</a> to verify if your records have propagated.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- end .space-y-3 -->
+        </div><!-- end guide panel -->
+
         <!-- Submit -->
         <div class="flex items-center gap-4">
             <button type="submit"
