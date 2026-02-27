@@ -1,9 +1,12 @@
 """Core views — Dashboard and main pages."""
 from __future__ import annotations
 
+from django.contrib import messages
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.db.models import Avg, Sum
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .models import GA4EventDefinition, KPIGoal, Site, WeeklySnapshot
@@ -115,3 +118,46 @@ def weekly_report(request, site_id: int):
         "snapshots": snapshots,
     }
     return render(request, "core/weekly_report.html", context)
+
+
+def register(request):
+    """First-access user registration."""
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        password2 = request.POST.get("password2", "")
+
+        errors: list[str] = []
+
+        if not username:
+            errors.append("Informe um nome de usuário.")
+        if not email:
+            errors.append("Informe um e-mail.")
+        if len(password) < 6:
+            errors.append("A senha deve ter pelo menos 6 caracteres.")
+        if password != password2:
+            errors.append("As senhas não coincidem.")
+        if User.objects.filter(username=username).exists():
+            errors.append("Esse nome de usuário já está em uso.")
+        if User.objects.filter(email=email).exists():
+            errors.append("Esse e-mail já está cadastrado.")
+
+        if errors:
+            return render(request, "pages/auth.html", {
+                "tab": "register",
+                "reg_errors": errors,
+                "reg_username": username,
+                "reg_email": email,
+            })
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+        )
+        login(request, user)
+        messages.success(request, f"Bem-vindo, {user.username}! Conta criada com sucesso.")
+        return redirect("/")
+
+    return render(request, "pages/auth.html", {"tab": "register"})
