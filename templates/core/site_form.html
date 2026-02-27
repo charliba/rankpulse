@@ -130,6 +130,11 @@
                 <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 Search Console &amp; SEO
             </h3>
+            <!-- Auto-fill notice -->
+            <div id="autofill-notice" class="hidden mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-start gap-2">
+                <svg class="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-xs text-emerald-800"><strong>✨ Preenchimento automático:</strong> Os campos abaixo foram preenchidos automaticamente com base na URL Base que você digitou. Você pode editar se necessário.</p>
+            </div>
             <div class="space-y-4">
                 <div class="flex items-center gap-3">
                     {{ form.gsc_verified }}
@@ -143,8 +148,9 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">
                         GSC Site URL
+                        <span id="badge-gsc" class="hidden ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wider">⚡ auto</span>
                         <span class="aura-help-trigger">?
-                            <span class="aura-tooltip">URL exata usada na verificação do Search Console (com https:// e barra final). Ex: https://meusite.com.br/</span>
+                            <span class="aura-tooltip">Preenchido automaticamente a partir da URL Base. É a URL exata usada na verificação do Search Console (com https:// e barra final).</span>
                         </span>
                     </label>
                     {{ form.gsc_site_url }}
@@ -153,8 +159,9 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             Sitemap URL
+                            <span id="badge-sitemap" class="hidden ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wider">⚡ auto</span>
                             <span class="aura-help-trigger">?
-                                <span class="aura-tooltip">URL do sitemap XML. Ex: https://meusite.com/sitemap.xml. WordPress gera automaticamente em /sitemap.xml ou /wp-sitemap.xml.</span>
+                                <span class="aura-tooltip">Preenchido automaticamente: URL Base + /sitemap.xml. Se seu site usa outro caminho (ex: /wp-sitemap.xml), edite manualmente.</span>
                             </span>
                         </label>
                         {{ form.sitemap_url }}
@@ -162,8 +169,9 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             robots.txt URL
+                            <span id="badge-robots" class="hidden ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wider">⚡ auto</span>
                             <span class="aura-help-trigger">?
-                                <span class="aura-tooltip aura-tooltip--right">URL do robots.txt na raiz do domínio. Ex: https://meusite.com/robots.txt. Deve incluir a referência ao sitemap.</span>
+                                <span class="aura-tooltip aura-tooltip--right">Preenchido automaticamente: URL Base + /robots.txt. Todo site deve ter um robots.txt na raiz.</span>
                             </span>
                         </label>
                         {{ form.robots_txt_url }}
@@ -805,4 +813,100 @@
         </div>
     </form>
 </div>
+
+<!-- Auto-fill GSC/Sitemap/robots from URL Base -->
+<script>
+(function() {
+    'use strict';
+    const urlField     = document.getElementById('id_url');
+    const domainField  = document.getElementById('id_domain');
+    const gscField     = document.getElementById('id_gsc_site_url');
+    const sitemapField = document.getElementById('id_sitemap_url');
+    const robotsField  = document.getElementById('id_robots_txt_url');
+    const notice       = document.getElementById('autofill-notice');
+    const badgeGsc     = document.getElementById('badge-gsc');
+    const badgeSitemap = document.getElementById('badge-sitemap');
+    const badgeRobots  = document.getElementById('badge-robots');
+
+    if (!urlField) return;
+
+    // Track which fields user has manually edited (don't overwrite)
+    const userEdited = { gsc: false, sitemap: false, robots: false };
+
+    [gscField, sitemapField, robotsField].forEach(function(f, i) {
+        if (!f) return;
+        f.addEventListener('input', function() {
+            var key = ['gsc', 'sitemap', 'robots'][i];
+            userEdited[key] = true;
+        });
+    });
+
+    function normalizeUrl(raw) {
+        var url = raw.trim().replace(/\/+$/, '');
+        if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
+        return url;
+    }
+
+    function autoFill() {
+        var base = normalizeUrl(urlField.value);
+        if (!base || base.length < 10) return;
+
+        var filled = false;
+
+        if (gscField && !userEdited.gsc && !gscField.value.trim()) {
+            gscField.value = base + '/';
+            gscField.classList.add('ring-2', 'ring-emerald-300');
+            if (badgeGsc) badgeGsc.classList.remove('hidden');
+            filled = true;
+        }
+        if (sitemapField && !userEdited.sitemap && !sitemapField.value.trim()) {
+            sitemapField.value = base + '/sitemap.xml';
+            sitemapField.classList.add('ring-2', 'ring-emerald-300');
+            if (badgeSitemap) badgeSitemap.classList.remove('hidden');
+            filled = true;
+        }
+        if (robotsField && !userEdited.robots && !robotsField.value.trim()) {
+            robotsField.value = base + '/robots.txt';
+            robotsField.classList.add('ring-2', 'ring-emerald-300');
+            if (badgeRobots) badgeRobots.classList.remove('hidden');
+            filled = true;
+        }
+
+        if (filled && notice) {
+            notice.classList.remove('hidden');
+            // Flash green briefly
+            setTimeout(function() {
+                [gscField, sitemapField, robotsField].forEach(function(f) {
+                    if (f) f.classList.remove('ring-2', 'ring-emerald-300');
+                });
+            }, 3000);
+        }
+    }
+
+    // Also auto-fill domain → URL if URL is empty
+    function domainToUrl() {
+        if (domainField && urlField && !urlField.value.trim() && domainField.value.trim()) {
+            urlField.value = 'https://' + domainField.value.trim().replace(/^https?:\/\//i, '');
+        }
+    }
+
+    // Listen on both blur and change for URL field
+    urlField.addEventListener('blur', autoFill);
+    urlField.addEventListener('change', autoFill);
+
+    // Domain → URL fallback
+    if (domainField) {
+        domainField.addEventListener('blur', function() {
+            domainToUrl();
+            // Small delay, then try autofill too
+            setTimeout(autoFill, 100);
+        });
+    }
+
+    // On page load, if URL already has a value (editing mode), run autofill for empty fields
+    if (urlField.value.trim()) {
+        setTimeout(autoFill, 300);
+    }
+})();
+</script>
 {% endblock %}
