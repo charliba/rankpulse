@@ -1,0 +1,418 @@
+/* ================================================================
+   Aura Chat Support Widget — RankPulse
+   Paleta: primary #6366f1 (indigo), accent #06b6d4 (cyan)
+   ================================================================ */
+
+/* Chat Button (FAB) */
+.aura-chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.aura-chat-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 28px rgba(99, 102, 241, 0.55);
+}
+
+.aura-chat-button svg {
+    width: 28px;
+    height: 28px;
+    fill: white;
+}
+
+.aura-chat-button .aura-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.3);
+    animation: auraPulse 2s ease-out infinite;
+}
+
+@keyframes auraPulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Chat Window */
+.aura-chat-window {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 390px;
+    height: 540px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.18);
+    z-index: 9998;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+.aura-chat-window.open {
+    display: flex;
+    animation: auraSlideUp 0.3s ease;
+}
+
+@keyframes auraSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.aura-chat-header {
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.aura-chat-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.aura-chat-header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aura-chat-header-avatar svg {
+    width: 22px;
+    height: 22px;
+    fill: white;
+}
+
+.aura-chat-header-text h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.aura-chat-header-text p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.aura-chat-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.aura-chat-close:hover {
+    opacity: 1;
+}
+
+/* Messages */
+.aura-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: #f9fafb;
+}
+
+.aura-chat-message {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.aura-chat-message.user { align-items: flex-end; }
+.aura-chat-message.ai,
+.aura-chat-message.system { align-items: flex-start; }
+
+.aura-chat-bubble {
+    max-width: 82%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-wrap: break-word;
+}
+
+.aura-chat-message.user .aura-chat-bubble {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.aura-chat-message.ai .aura-chat-bubble {
+    background: white;
+    color: #111827;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+}
+
+.aura-chat-message.system .aura-chat-bubble {
+    background: #e5e7eb;
+    color: #6b7280;
+    font-style: italic;
+    font-size: 13px;
+}
+
+.aura-chat-time {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+    padding: 0 8px;
+}
+
+/* Typing Indicator */
+.aura-typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.07);
+    width: fit-content;
+}
+
+.aura-typing-dot {
+    width: 8px;
+    height: 8px;
+    background: #a5b4fc;
+    border-radius: 50%;
+    animation: auraBounce 1.4s infinite ease-in-out;
+}
+
+.aura-typing-dot:nth-child(1) { animation-delay: 0s; }
+.aura-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.aura-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes auraBounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* Input Area */
+.aura-chat-input-area {
+    padding: 12px 16px;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.aura-chat-input {
+    flex: 1;
+    border: 1px solid #d1d5db;
+    border-radius: 24px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.aura-chat-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.aura-chat-input::placeholder {
+    color: #9ca3af;
+}
+
+.aura-chat-send {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.aura-chat-send:hover {
+    transform: scale(1.1);
+}
+
+.aura-chat-send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.aura-chat-send svg {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
+
+/* Quick Actions */
+.aura-quick-actions {
+    padding: 8px 16px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.aura-quick-action {
+    padding: 5px 12px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 16px;
+    font-size: 12px;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.aura-quick-action:hover {
+    background: #6366f1;
+    color: white;
+    border-color: #6366f1;
+}
+
+/* Markdown in bubble */
+.aura-chat-bubble strong { font-weight: 600; }
+.aura-chat-bubble em { font-style: italic; }
+.aura-chat-bubble code {
+    background: rgba(99, 102, 241, 0.1);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+}
+.aura-chat-bubble ul,
+.aura-chat-bubble ol {
+    margin: 4px 0;
+    padding-left: 18px;
+}
+.aura-chat-bubble li { margin-bottom: 2px; }
+.aura-chat-bubble a {
+    color: #6366f1;
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .aura-chat-window {
+        width: calc(100% - 20px);
+        height: calc(100% - 100px);
+        right: 10px;
+        bottom: 80px;
+        border-radius: 12px;
+    }
+
+    .aura-chat-button {
+        width: 54px;
+        height: 54px;
+        right: 16px;
+        bottom: 16px;
+    }
+}
+
+/* ================================================================
+   Tooltip Help Icons (❓)
+   ================================================================ */
+
+.aura-help-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #6366f1;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: help;
+    margin-left: 4px;
+    transition: all 0.2s;
+    vertical-align: middle;
+    position: relative;
+}
+
+.aura-help-trigger:hover {
+    background: #6366f1;
+    color: white;
+}
+
+.aura-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111827;
+    color: #f3f4f6;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    padding: 10px 14px;
+    border-radius: 8px;
+    max-width: 280px;
+    min-width: 180px;
+    white-space: normal;
+    z-index: 10000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+}
+
+.aura-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #111827;
+}
+
+.aura-help-trigger:hover .aura-tooltip {
+    display: block;
+}
+
+/* Right-aligned tooltip for fields near right edge */
+.aura-tooltip--right {
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.aura-tooltip--right::after {
+    left: auto;
+    right: 16px;
+    transform: none;
+}

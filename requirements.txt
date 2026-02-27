@@ -12,6 +12,7 @@ google-auth-oauthlib>=1.2
 
 # AI Content Generation
 openai>=1.30
+agno>=1.0.0
 
 # HTTP Client
 httpx>=0.27

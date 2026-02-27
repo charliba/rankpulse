@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.seo.apps.SeoConfig",
     "apps.content.apps.ContentConfig",
     "apps.checklists.apps.ChecklistsConfig",
+    "apps.chat_support.apps.ChatSupportConfig",
 ]
 
 # ─── Middleware ─────────────────────────────────────────

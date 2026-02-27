@@ -46,18 +46,33 @@
             </h3>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Site *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Nome do Site *
+                        <span class="aura-help-trigger">?
+                            <span class="aura-tooltip">Nome amigável para identificar o site no dashboard. Ex: "Minha Loja", "Blog Pessoal".</span>
+                        </span>
+                    </label>
                     {{ form.name }}
                     {% if form.name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.name.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Domínio *</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Domínio *
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip">Apenas o domínio, sem https. Ex: meusite.com.br</span>
+                            </span>
+                        </label>
                         {{ form.domain }}
                         {% if form.domain.errors %}<p class="text-red-500 text-xs mt-1">{{ form.domain.errors.0 }}</p>{% endif %}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">URL Base *</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            URL Base *
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip">URL completa com https. Ex: https://meusite.com.br</span>
+                            </span>
+                        </label>
                         {{ form.url }}
                         {% if form.url.errors %}<p class="text-red-500 text-xs mt-1">{{ form.url.errors.0 }}</p>{% endif %}
                     </div>
@@ -78,16 +93,31 @@
             <p class="text-sm text-gray-500 mb-4">Configure a integração com GA4 (você pode preencher depois)</p>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Measurement ID</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Measurement ID
+                        <span class="aura-help-trigger">?
+                            <span class="aura-tooltip">Formato G-XXXXXXXXXX. Encontre em: GA4 → Admin (⚙️) → Data Streams → clique no fluxo web → copie o Measurement ID.</span>
+                        </span>
+                    </label>
                     {{ form.ga4_measurement_id }}
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">API Secret</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            API Secret
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip">Chave para envio de eventos server-side. GA4 → Admin → Data Streams → Measurement Protocol API Secrets → Create.</span>
+                            </span>
+                        </label>
                         {{ form.ga4_api_secret }}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Property ID</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Property ID
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip aura-tooltip--right">Número da propriedade GA4. GA4 → Admin → Property Settings → Property ID no topo da página.</span>
+                            </span>
+                        </label>
                         {{ form.ga4_property_id }}
                     </div>
                 </div>
@@ -103,19 +133,39 @@
             <div class="space-y-4">
                 <div class="flex items-center gap-3">
                     {{ form.gsc_verified }}
-                    <label class="text-sm font-medium text-gray-700">GSC Verificado</label>
+                    <label class="text-sm font-medium text-gray-700">
+                        GSC Verificado
+                        <span class="aura-help-trigger">?
+                            <span class="aura-tooltip">Marque se o site já foi verificado no Google Search Console. Para verificar: search.google.com/search-console → Add property.</span>
+                        </span>
+                    </label>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">GSC Site URL</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        GSC Site URL
+                        <span class="aura-help-trigger">?
+                            <span class="aura-tooltip">URL exata usada na verificação do Search Console (com https:// e barra final). Ex: https://meusite.com.br/</span>
+                        </span>
+                    </label>
                     {{ form.gsc_site_url }}
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Sitemap URL</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Sitemap URL
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip">URL do sitemap XML. Ex: https://meusite.com/sitemap.xml. WordPress gera automaticamente em /sitemap.xml ou /wp-sitemap.xml.</span>
+                            </span>
+                        </label>
                         {{ form.sitemap_url }}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">robots.txt URL</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            robots.txt URL
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip aura-tooltip--right">URL do robots.txt na raiz do domínio. Ex: https://meusite.com/robots.txt. Deve incluir a referência ao sitemap.</span>
+                            </span>
+                        </label>
                         {{ form.robots_txt_url }}
                     </div>
                 </div>

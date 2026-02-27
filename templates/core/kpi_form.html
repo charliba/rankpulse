@@ -37,31 +37,61 @@
             <div class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome da Métrica *</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Nome da Métrica *
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip">Nome descritivo da métrica. Ex: "Sessões Orgânicas", "CTR GSC", "Posição Média", "Leads por mês".</span>
+                            </span>
+                        </label>
                         {{ form.metric_name }}
                         {% if form.metric_name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.metric_name.errors.0 }}</p>{% endif %}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fonte</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Fonte
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip aura-tooltip--right">De onde vem o dado: GA4 (Google Analytics), GSC (Search Console), Manual (você atualiza) ou Custom (outra fonte).</span>
+                            </span>
+                        </label>
                         {{ form.source }}
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Período</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Período
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip">Periodicidade da meta: mensal, trimestral, semestral ou anual.</span>
+                            </span>
+                        </label>
                         {{ form.period }}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Meta</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Meta
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip">Valor numérico a atingir. Ex: 10000 sessões, 5% CTR, posição 3.</span>
+                            </span>
+                        </label>
                         {{ form.target_value }}
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Valor Atual</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Valor Atual
+                            <span class="aura-help-trigger">?
+                                <span class="aura-tooltip aura-tooltip--right">Progresso atual da métrica. Atualize conforme avança. A barra de progresso é calculada automaticamente.</span>
+                            </span>
+                        </label>
                         {{ form.current_value }}
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Unidade</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Unidade
+                        <span class="aura-help-trigger">?
+                            <span class="aura-tooltip">Unidade de medida: "sessões", "%", "posição", "leads", "R$", etc.</span>
+                        </span>
+                    </label>
                     {{ form.unit }}
                 </div>
             </div>

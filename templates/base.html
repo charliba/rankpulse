@@ -37,6 +37,7 @@
 
     <!-- Custom styles -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/aura-chat.css' %}">
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -88,6 +89,8 @@
 
     <!-- App JS -->
     <script src="{% static 'js/app.js' %}"></script>
+    <!-- Aura Chat Widget -->
+    <script src="{% static 'js/aura-chat.js' %}" defer></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
