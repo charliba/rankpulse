@@ -1,6 +1,7 @@
 """Core models — Sites managed by the traffic system."""
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -8,6 +9,14 @@ from django.utils import timezone
 class Site(models.Model):
     """A website managed by Trafic Provider."""
 
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="sites",
+        verbose_name="Proprietário",
+        null=True,
+        blank=True,
+    )
     name = models.CharField(max_length=200, verbose_name="Nome do Site")
     domain = models.CharField(max_length=253, unique=True, verbose_name="Domínio")
     url = models.URLField(verbose_name="URL Base")

@@ -58,6 +58,15 @@ Dark sidebar with navigation, user info, and logout.
 
         <p class="px-4 pt-6 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ferramentas</p>
 
+        <a href="{% url 'core:site_add' %}"
+           class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-300 hover:bg-gray-800 hover:text-white">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Adicionar Site
+        </a>
+
+        {% if user.is_staff %}
         <a href="{% url 'admin:index' %}"
            class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-gray-300 hover:bg-gray-800 hover:text-white">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,6 +76,7 @@ Dark sidebar with navigation, user info, and logout.
             </svg>
             Admin Django
         </a>
+        {% endif %}
     </nav>
 
     <!-- User info + Logout -->
