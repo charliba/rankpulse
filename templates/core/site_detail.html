@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} — RankPulse{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">{{ site.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>{{ site.name }}</h2>
+        <a href="{{ site.url }}" target="_blank" class="text-muted">{{ site.domain }} <i class="bi bi-box-arrow-up-right"></i></a>
+    </div>
+    <div>
+        <a href="{% url 'core:weekly_report' site.pk %}" class="btn btn-primary">
+            <i class="bi bi-calendar-week"></i> Relatório Semanal
+        </a>
+    </div>
+</div>
+
+<!-- Config badges -->
+<div class="mb-4">
+    {% if site.ga4_measurement_id %}
+    <span class="badge bg-success"><i class="bi bi-check-circle"></i> GA4: {{ site.ga4_measurement_id }}</span>
+    {% else %}
+    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> GA4 não configurado</span>
+    {% endif %}
+
+    {% if site.gsc_verified %}
+    <span class="badge bg-success"><i class="bi bi-check-circle"></i> GSC Verificado</span>
+    {% else %}
+    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> GSC pendente</span>
+    {% endif %}
+
+    {% if site.sitemap_url %}
+    <span class="badge bg-info text-dark"><i class="bi bi-map"></i> Sitemap</span>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    <!-- Events Pending -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-exclamation-circle text-warning"></i> Eventos Pendentes ({{ events_pending|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% for event in events_pending %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div>
+                        <strong>{{ event.event_name }}</strong>
+                        <br><small class="text-muted">{{ event.trigger_page }}</small>
+                    </div>
+                    <span class="badge bg-{{ event.priority }}">{{ event.get_priority_display }}</span>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">Todos os eventos implementados! ✅</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Done -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success bg-opacity-10">
+                <h5 class="mb-0"><i class="bi bi-check-circle text-success"></i> Eventos Implementados ({{ events_done|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% for event in events_done %}
+                <div class="py-2 border-bottom">
+                    <strong>{{ event.event_name }}</strong>
+                    {% if event.is_conversion %}<span class="badge bg-primary ms-1">Key Event</span>{% endif %}
+                    {% if event.server_side %}<span class="badge bg-dark ms-1">Server</span>{% endif %}
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">Nenhum evento implementado ainda.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Goals -->
+    {% for period, goals in kpis_by_period.items %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bullseye"></i> KPIs — {{ period }}</h5>
+            </div>
+            <div class="card-body">
+                {% for kpi in goals %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>{{ kpi.metric_name }}</span>
+                        <span>{{ kpi.current_value }} / {{ kpi.target_value }} {{ kpi.unit }}</span>
+                    </div>
+                    {% with pct=kpi.progress_pct %}
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-primary{% else %}bg-warning{% endif %}"
+                             style="width: {% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%"></div>
+                    </div>
+                    {% endwith %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Recent Snapshots -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Histórico Semanal</h5>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Semana</th>
+                            <th>Sessões Orgânicas</th>
+                            <th>GSC Cliques</th>
+                            <th>GSC Impressões</th>
+                            <th>CTR</th>
+                            <th>Posição</th>
+                            <th>Signups</th>
+                            <th>Top 10</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for snap in snapshots %}
+                        <tr>
+                            <td>{{ snap.week_start|date:"d/m" }} – {{ snap.week_end|date:"d/m" }}</td>
+                            <td>{{ snap.organic_sessions }}</td>
+                            <td>{{ snap.gsc_clicks }}</td>
+                            <td>{{ snap.gsc_impressions }}</td>
+                            <td>{{ snap.gsc_ctr }}%</td>
+                            <td>{{ snap.gsc_position }}</td>
+                            <td>{{ snap.signups }}</td>
+                            <td>{{ snap.keywords_top10 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="text-muted text-center">Sem dados</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

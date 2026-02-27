@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Relatório Semanal — {{ site.name }} — RankPulse{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'core:site_detail' site.pk %}">{{ site.name }}</a></li>
+        <li class="breadcrumb-item active">Relatório Semanal</li>
+    </ol>
+</nav>
+
+<h2 class="mb-4"><i class="bi bi-calendar-week"></i> Relatório Semanal — {{ site.name }}</h2>
+
+<div class="row g-4">
+    <!-- Form -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Registrar Dados</h5></div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <h6 class="text-muted mt-2">📊 Tráfego</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Sessões Orgânicas</label>
+                            <input type="number" name="organic_sessions" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Total Sessões</label>
+                            <input type="number" name="total_sessions" class="form-control form-control-sm" value="0">
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted">🔍 Search Console</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Impressões</label>
+                            <input type="number" name="gsc_impressions" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Cliques</label>
+                            <input type="number" name="gsc_clicks" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">CTR (%)</label>
+                            <input type="number" name="gsc_ctr" step="0.01" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label form-label-sm">Posição Média</label>
+                            <input type="number" name="gsc_position" step="0.1" class="form-control form-control-sm" value="0">
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted">🎯 Conversões</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label form-label-sm">Signups</label>
+                            <input type="number" name="signups" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label form-label-sm">Purchases</label>
+                            <input type="number" name="purchases" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label form-label-sm">Revenue (R$)</label>
+                            <input type="number" name="revenue" step="0.01" class="form-control form-control-sm" value="0">
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted">📈 SEO</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label form-label-sm">Keywords Top 10</label>
+                            <input type="number" name="keywords_top10" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label form-label-sm">Posts Publicados</label>
+                            <input type="number" name="posts_published" class="form-control form-control-sm" value="0">
+                        </div>
+                        <div class="col-4">
+                            <label class="form-label form-label-sm">Backlinks</label>
+                            <input type="number" name="backlinks" class="form-control form-control-sm" value="0">
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted">📝 Notas</h6>
+                    <div class="mb-2">
+                        <textarea name="highlights" class="form-control form-control-sm" rows="2" placeholder="Destaques da semana..."></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <textarea name="issues" class="form-control form-control-sm" rows="2" placeholder="Problemas encontrados..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <textarea name="next_steps" class="form-control form-control-sm" rows="2" placeholder="Próximos passos..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save"></i> Salvar Relatório
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Histórico</h5></div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Semana</th>
+                            <th>Orgânico</th>
+                            <th>Cliques</th>
+                            <th>Signups</th>
+                            <th>Destaques</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for snap in snapshots %}
+                        <tr>
+                            <td>{{ snap.week_start|date:"d/m" }}</td>
+                            <td>{{ snap.organic_sessions }}</td>
+                            <td>{{ snap.gsc_clicks }}</td>
+                            <td>{{ snap.signups }}</td>
+                            <td><small>{{ snap.highlights|truncatewords:10 }}</small></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-muted text-center">Sem dados</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
