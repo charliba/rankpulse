@@ -2,137 +2,196 @@
 {% block title %}Relatório Semanal — {{ site.name }} — RankPulse{% endblock %}
 
 {% block content %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'core:site_detail' site.pk %}">{{ site.name }}</a></li>
-        <li class="breadcrumb-item active">Relatório Semanal</li>
-    </ol>
-</nav>
+<div class="lg:pl-4">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="{% url 'core:dashboard' %}" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+        <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <a href="{% url 'core:site_detail' site.pk %}" class="hover:text-indigo-600 transition-colors">{{ site.name }}</a>
+        <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-gray-900 font-medium">Relatório Semanal</span>
+    </nav>
 
-<h2 class="mb-4"><i class="bi bi-calendar-week"></i> Relatório Semanal — {{ site.name }}</h2>
-
-<div class="row g-4">
-    <!-- Form -->
-    <div class="col-lg-5">
-        <div class="card">
-            <div class="card-header"><h5 class="mb-0">Registrar Dados</h5></div>
-            <div class="card-body">
-                <form method="POST">
-                    {% csrf_token %}
-
-                    <h6 class="text-muted mt-2">📊 Tráfego</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Sessões Orgânicas</label>
-                            <input type="number" name="organic_sessions" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Total Sessões</label>
-                            <input type="number" name="total_sessions" class="form-control form-control-sm" value="0">
-                        </div>
-                    </div>
-
-                    <h6 class="text-muted">🔍 Search Console</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Impressões</label>
-                            <input type="number" name="gsc_impressions" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Cliques</label>
-                            <input type="number" name="gsc_clicks" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">CTR (%)</label>
-                            <input type="number" name="gsc_ctr" step="0.01" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-sm">Posição Média</label>
-                            <input type="number" name="gsc_position" step="0.1" class="form-control form-control-sm" value="0">
-                        </div>
-                    </div>
-
-                    <h6 class="text-muted">🎯 Conversões</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Signups</label>
-                            <input type="number" name="signups" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Purchases</label>
-                            <input type="number" name="purchases" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Revenue (R$)</label>
-                            <input type="number" name="revenue" step="0.01" class="form-control form-control-sm" value="0">
-                        </div>
-                    </div>
-
-                    <h6 class="text-muted">📈 SEO</h6>
-                    <div class="row g-2 mb-3">
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Keywords Top 10</label>
-                            <input type="number" name="keywords_top10" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Posts Publicados</label>
-                            <input type="number" name="posts_published" class="form-control form-control-sm" value="0">
-                        </div>
-                        <div class="col-4">
-                            <label class="form-label form-label-sm">Backlinks</label>
-                            <input type="number" name="backlinks" class="form-control form-control-sm" value="0">
-                        </div>
-                    </div>
-
-                    <h6 class="text-muted">📝 Notas</h6>
-                    <div class="mb-2">
-                        <textarea name="highlights" class="form-control form-control-sm" rows="2" placeholder="Destaques da semana..."></textarea>
-                    </div>
-                    <div class="mb-2">
-                        <textarea name="issues" class="form-control form-control-sm" rows="2" placeholder="Problemas encontrados..."></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <textarea name="next_steps" class="form-control form-control-sm" rows="2" placeholder="Próximos passos..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-save"></i> Salvar Relatório
-                    </button>
-                </form>
-            </div>
-        </div>
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Relatório Semanal</h1>
+        <p class="text-gray-500 mt-1">{{ site.name }} — Registre os dados semanais de performance</p>
     </div>
 
-    <!-- History -->
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-header"><h5 class="mb-0">Histórico</h5></div>
-            <div class="card-body table-responsive">
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Semana</th>
-                            <th>Orgânico</th>
-                            <th>Cliques</th>
-                            <th>Signups</th>
-                            <th>Destaques</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for snap in snapshots %}
-                        <tr>
-                            <td>{{ snap.week_start|date:"d/m" }}</td>
-                            <td>{{ snap.organic_sessions }}</td>
-                            <td>{{ snap.gsc_clicks }}</td>
-                            <td>{{ snap.signups }}</td>
-                            <td><small>{{ snap.highlights|truncatewords:10 }}</small></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5" class="text-muted text-center">Sem dados</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <!-- Form (left / 2 cols) -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-6">
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <h3 class="font-semibold text-gray-900">Registrar Dados</h3>
+                </div>
+                <div class="p-6">
+                    <form method="POST" class="space-y-5">
+                        {% csrf_token %}
+
+                        <!-- Traffic -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                Tráfego
+                            </h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Sessões Orgânicas</label>
+                                    <input type="number" name="organic_sessions" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Total Sessões</label>
+                                    <input type="number" name="total_sessions" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Search Console -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                Search Console
+                            </h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Impressões</label>
+                                    <input type="number" name="gsc_impressions" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Cliques</label>
+                                    <input type="number" name="gsc_clicks" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">CTR (%)</label>
+                                    <input type="number" name="gsc_ctr" step="0.01" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Posição Média</label>
+                                    <input type="number" name="gsc_position" step="0.1" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conversions -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Conversões
+                            </h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Signups</label>
+                                    <input type="number" name="signups" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Purchases</label>
+                                    <input type="number" name="purchases" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Revenue (R$)</label>
+                                    <input type="number" name="revenue" step="0.01" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SEO -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                                SEO
+                            </h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Keywords Top 10</label>
+                                    <input type="number" name="keywords_top10" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Posts Publicados</label>
+                                    <input type="number" name="posts_published" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Backlinks</label>
+                                    <input type="number" name="backlinks" value="0"
+                                           class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                Notas
+                            </h4>
+                            <div class="space-y-3">
+                                <textarea name="highlights" rows="2" placeholder="Destaques da semana..."
+                                          class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"></textarea>
+                                <textarea name="issues" rows="2" placeholder="Problemas encontrados..."
+                                          class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"></textarea>
+                                <textarea name="next_steps" rows="2" placeholder="Próximos passos..."
+                                          class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                            Salvar Relatório
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- History (right / 3 cols) -->
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Histórico
+                    </h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-xs text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3 font-medium">Semana</th>
+                                <th class="px-6 py-3 font-medium">Orgânico</th>
+                                <th class="px-6 py-3 font-medium">Cliques</th>
+                                <th class="px-6 py-3 font-medium">Signups</th>
+                                <th class="px-6 py-3 font-medium">Destaques</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for snap in snapshots %}
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-3 font-medium text-gray-900 whitespace-nowrap">{{ snap.week_start|date:"d/m" }}</td>
+                                <td class="px-6 py-3 text-gray-700">{{ snap.organic_sessions }}</td>
+                                <td class="px-6 py-3 text-gray-700">{{ snap.gsc_clicks }}</td>
+                                <td class="px-6 py-3 text-gray-700">{{ snap.signups }}</td>
+                                <td class="px-6 py-3 text-gray-500 text-xs max-w-[200px] truncate">{{ snap.highlights|truncatewords:10 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-400">Sem dados registrados</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

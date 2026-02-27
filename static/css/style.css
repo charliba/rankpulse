@@ -1,0 +1,80 @@
+/* RankPulse — Custom styles (complementa Tailwind CDN) */
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* HTMX loading states */
+.htmx-request {
+    opacity: 0.7;
+    pointer-events: none;
+    transition: opacity 200ms;
+}
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline-block; }
+.htmx-request.htmx-indicator { display: inline-block; }
+
+/* Toast notification */
+.toast {
+    animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 2.7s forwards;
+}
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Smooth page transitions */
+main {
+    animation: fadeIn 200ms ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Alpine.js cloak */
+[x-cloak] { display: none !important; }
+
+/* Score ring animation */
+@keyframes scoreRing {
+    from { stroke-dashoffset: 251; }
+}
+
+/* Pulse dot for live status */
+.pulse-dot {
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* Card hover lift */
+.card-hover {
+    transition: transform 200ms, box-shadow 200ms;
+}
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Progress bar animation */
+.progress-fill {
+    transition: width 600ms ease-out;
+}

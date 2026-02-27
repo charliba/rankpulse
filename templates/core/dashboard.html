@@ -2,86 +2,127 @@
 {% block title %}Dashboard — RankPulse{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
-    <span class="badge bg-primary fs-6">{{ total_sites }} site{{ total_sites|pluralize:"s" }}</span>
-</div>
+<div class="lg:pl-4">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-500 mt-1">Visão geral dos seus {{ total_sites }} site{{ total_sites|pluralize:"s" }}</p>
+        </div>
+        <a href="{% url 'admin:core_site_add' %}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Adicionar Site
+        </a>
+    </div>
 
-{% if site_data %}
-<div class="row g-4">
-    {% for item in site_data %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h5 class="card-title mb-1">{{ item.site.name }}</h5>
-                        <small class="text-muted">{{ item.site.domain }}</small>
+    {% if site_data %}
+    <!-- Site Cards -->
+    <div class="space-y-4">
+        {% for item in site_data %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover">
+            <div class="p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <!-- Site info -->
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                            {{ item.site.name|first|upper }}
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="text-lg font-semibold text-gray-900 truncate">{{ item.site.name }}</h3>
+                            <p class="text-sm text-gray-500 truncate">{{ item.site.domain }}</p>
+                        </div>
+                        {% if item.site.is_active %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full flex-shrink-0">
+                            <span class="pulse-dot"></span> Ativo
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full flex-shrink-0">Inativo</span>
+                        {% endif %}
                     </div>
-                    {% if item.site.is_active %}
-                    <span class="badge bg-success">Ativo</span>
-                    {% else %}
-                    <span class="badge bg-secondary">Inativo</span>
-                    {% endif %}
+
+                    <!-- Metrics -->
+                    <div class="flex flex-wrap items-center gap-6 lg:gap-8">
+                        <!-- Snapshot metrics -->
+                        {% if item.snapshot %}
+                        <div class="text-center">
+                            <p class="text-xs text-gray-400 mb-0.5">Sessões Org.</p>
+                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.organic_sessions|default:"—" }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-400 mb-0.5">Cliques GSC</p>
+                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.gsc_clicks|default:"—" }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-400 mb-0.5">Signups</p>
+                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.signups|default:"0" }}</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-400 mb-0.5">Top 10</p>
+                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.keywords_top10|default:"—" }}</p>
+                        </div>
+                        {% else %}
+                        <p class="text-sm text-gray-400 italic">Sem dados semanais</p>
+                        {% endif %}
+
+                        <!-- Events progress -->
+                        <div>
+                            <p class="text-xs text-gray-400 mb-1">Eventos GA4</p>
+                            <div class="flex items-center gap-2">
+                                <div class="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-green-500 rounded-full progress-fill"
+                                         style="width: {{ item.events_pct|floatformat:0 }}%"></div>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600">{{ item.events_implemented }}/{{ item.events_total }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {% if item.snapshot %}
-                <div class="row g-2 mb-3">
-                    <div class="col-6">
-                        <div class="stat-card bg-light rounded p-2">
-                            <div class="stat-value fs-5">{{ item.snapshot.organic_sessions|default:"—" }}</div>
-                            <div class="stat-label">Sessões Orgânicas</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card bg-light rounded p-2">
-                            <div class="stat-value fs-5">{{ item.snapshot.gsc_clicks|default:"—" }}</div>
-                            <div class="stat-label">Cliques GSC</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card bg-light rounded p-2">
-                            <div class="stat-value fs-5">{{ item.snapshot.signups|default:"0" }}</div>
-                            <div class="stat-label">Sign ups</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card bg-light rounded p-2">
-                            <div class="stat-value fs-5">{{ item.snapshot.keywords_top10|default:"—" }}</div>
-                            <div class="stat-label">Keywords Top 10</div>
-                        </div>
-                    </div>
-                </div>
-                {% else %}
-                <p class="text-muted mb-3"><small>Sem dados semanais ainda</small></p>
-                {% endif %}
-
-                <div class="mb-2">
-                    <small class="text-muted">Eventos GA4</small>
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-success" style="width: {{ item.events_pct }}%"></div>
-                    </div>
-                    <small>{{ item.events_implemented }}/{{ item.events_total }} implementados</small>
-                </div>
-
-                <div class="mt-3">
-                    <a href="{% url 'core:site_detail' item.site.pk %}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-eye"></i> Detalhes
+                <!-- Action buttons -->
+                <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                    <a href="{% url 'core:site_detail' item.site.pk %}"
+                       class="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        Detalhes
                     </a>
-                    <a href="{% url 'core:weekly_report' item.site.pk %}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-calendar-week"></i> Relatório Semanal
+                    <span class="text-gray-300">|</span>
+                    <a href="{% url 'core:weekly_report' item.site.pk %}"
+                       class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Relatório Semanal
                     </a>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <!-- Empty state -->
+    <div class="text-center py-20">
+        <div class="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+            </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Nenhum site cadastrado</h3>
+        <p class="text-gray-400 mb-6 max-w-sm mx-auto">Adicione seu primeiro site para começar a monitorar tráfego e métricas SEO.</p>
+        <a href="{% url 'admin:core_site_add' %}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Adicionar Site
+        </a>
+    </div>
+    {% endif %}
 </div>
-{% else %}
-<div class="text-center py-5">
-    <i class="bi bi-globe2 display-1 text-muted"></i>
-    <h4 class="mt-3">Nenhum site cadastrado</h4>
-    <p class="text-muted">Adicione um site no <a href="{% url 'admin:index' %}">Admin</a> para começar.</p>
-</div>
-{% endif %}
 {% endblock %}

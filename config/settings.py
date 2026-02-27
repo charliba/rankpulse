@@ -111,6 +111,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # ─── Default PK ───────────────────────────────────────
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# ─── Auth / Login ────────────────────────────────────
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/login/"
+
 # ─── REST Framework ───────────────────────────────────
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",

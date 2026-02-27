@@ -2,104 +2,152 @@
 {% block title %}{{ site.name }} — RankPulse{% endblock %}
 
 {% block content %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'core:dashboard' %}">Dashboard</a></li>
-        <li class="breadcrumb-item active">{{ site.name }}</li>
-    </ol>
-</nav>
+<div class="lg:pl-4">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="{% url 'core:dashboard' %}" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+        <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-gray-900 font-medium">{{ site.name }}</span>
+    </nav>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2>{{ site.name }}</h2>
-        <a href="{{ site.url }}" target="_blank" class="text-muted">{{ site.domain }} <i class="bi bi-box-arrow-up-right"></i></a>
-    </div>
-    <div>
-        <a href="{% url 'core:weekly_report' site.pk %}" class="btn btn-primary">
-            <i class="bi bi-calendar-week"></i> Relatório Semanal
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+                {{ site.name|first|upper }}
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ site.name }}</h1>
+                <a href="{{ site.url }}" target="_blank" class="text-sm text-gray-500 hover:text-indigo-600 transition-colors inline-flex items-center gap-1">
+                    {{ site.domain }}
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+            </div>
+        </div>
+        <a href="{% url 'core:weekly_report' site.pk %}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Relatório Semanal
         </a>
     </div>
-</div>
 
-<!-- Config badges -->
-<div class="mb-4">
-    {% if site.ga4_measurement_id %}
-    <span class="badge bg-success"><i class="bi bi-check-circle"></i> GA4: {{ site.ga4_measurement_id }}</span>
-    {% else %}
-    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> GA4 não configurado</span>
-    {% endif %}
+    <!-- Config badges -->
+    <div class="flex flex-wrap items-center gap-2 mb-8">
+        {% if site.ga4_measurement_id %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            GA4: {{ site.ga4_measurement_id }}
+        </span>
+        {% else %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            GA4 não configurado
+        </span>
+        {% endif %}
 
-    {% if site.gsc_verified %}
-    <span class="badge bg-success"><i class="bi bi-check-circle"></i> GSC Verificado</span>
-    {% else %}
-    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> GSC pendente</span>
-    {% endif %}
+        {% if site.gsc_verified %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            GSC Verificado
+        </span>
+        {% else %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            GSC pendente
+        </span>
+        {% endif %}
 
-    {% if site.sitemap_url %}
-    <span class="badge bg-info text-dark"><i class="bi bi-map"></i> Sitemap</span>
-    {% endif %}
-</div>
+        {% if site.sitemap_url %}
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-100 text-cyan-700 text-xs font-medium rounded-full">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+            Sitemap
+        </span>
+        {% endif %}
+    </div>
 
-<div class="row g-4">
-    <!-- Events Pending -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0"><i class="bi bi-exclamation-circle text-warning"></i> Eventos Pendentes ({{ events_pending|length }})</h5>
+    <!-- Events Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Pending Events -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-amber-50/50">
+                <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Eventos Pendentes
+                    <span class="text-sm font-normal text-gray-500">({{ events_pending|length }})</span>
+                </h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 {% for event in events_pending %}
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                <div class="flex items-center justify-between py-3 {% if not forloop.last %}border-b border-gray-100{% endif %}">
                     <div>
-                        <strong>{{ event.event_name }}</strong>
-                        <br><small class="text-muted">{{ event.trigger_page }}</small>
+                        <p class="font-medium text-gray-900">{{ event.event_name }}</p>
+                        <p class="text-sm text-gray-500">{{ event.trigger_page }}</p>
                     </div>
-                    <span class="badge bg-{{ event.priority }}">{{ event.get_priority_display }}</span>
+                    <span class="px-2 py-0.5 text-xs font-medium rounded-full
+                        {% if event.priority == 'critical' %}bg-red-100 text-red-700
+                        {% elif event.priority == 'high' %}bg-orange-100 text-orange-700
+                        {% elif event.priority == 'medium' %}bg-yellow-100 text-yellow-700
+                        {% else %}bg-gray-100 text-gray-600{% endif %}">
+                        {{ event.get_priority_display }}
+                    </span>
                 </div>
                 {% empty %}
-                <p class="text-muted mb-0">Todos os eventos implementados! ✅</p>
+                <div class="text-center py-6">
+                    <svg class="w-10 h-10 text-green-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="text-gray-500 text-sm">Todos os eventos implementados!</p>
+                </div>
                 {% endfor %}
             </div>
         </div>
-    </div>
 
-    <!-- Events Done -->
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-success bg-opacity-10">
-                <h5 class="mb-0"><i class="bi bi-check-circle text-success"></i> Eventos Implementados ({{ events_done|length }})</h5>
+        <!-- Done Events -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-green-50/50">
+                <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Eventos Implementados
+                    <span class="text-sm font-normal text-gray-500">({{ events_done|length }})</span>
+                </h3>
             </div>
-            <div class="card-body">
+            <div class="p-6">
                 {% for event in events_done %}
-                <div class="py-2 border-bottom">
-                    <strong>{{ event.event_name }}</strong>
-                    {% if event.is_conversion %}<span class="badge bg-primary ms-1">Key Event</span>{% endif %}
-                    {% if event.server_side %}<span class="badge bg-dark ms-1">Server</span>{% endif %}
+                <div class="flex items-center gap-3 py-3 {% if not forloop.last %}border-b border-gray-100{% endif %}">
+                    <p class="font-medium text-gray-900">{{ event.event_name }}</p>
+                    {% if event.is_conversion %}
+                    <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">Key Event</span>
+                    {% endif %}
+                    {% if event.server_side %}
+                    <span class="px-2 py-0.5 bg-gray-800 text-white text-xs font-medium rounded-full">Server</span>
+                    {% endif %}
                 </div>
                 {% empty %}
-                <p class="text-muted mb-0">Nenhum evento implementado ainda.</p>
+                <p class="text-gray-400 text-sm text-center py-6">Nenhum evento implementado ainda.</p>
                 {% endfor %}
             </div>
         </div>
     </div>
 
     <!-- KPI Goals -->
-    {% for period, goals in kpis_by_period.items %}
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-bullseye"></i> KPIs — {{ period }}</h5>
+    {% if kpis_by_period %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {% for period, goals in kpis_by_period.items %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    KPIs — {{ period }}
+                </h3>
             </div>
-            <div class="card-body">
+            <div class="p-6 space-y-4">
                 {% for kpi in goals %}
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span>{{ kpi.metric_name }}</span>
-                        <span>{{ kpi.current_value }} / {{ kpi.target_value }} {{ kpi.unit }}</span>
+                <div>
+                    <div class="flex items-center justify-between text-sm mb-1.5">
+                        <span class="text-gray-700 font-medium">{{ kpi.metric_name }}</span>
+                        <span class="text-gray-500">{{ kpi.current_value }} / {{ kpi.target_value }} {{ kpi.unit }}</span>
                     </div>
                     {% with pct=kpi.progress_pct %}
-                    <div class="progress" style="height: 8px;">
-                        <div class="progress-bar {% if pct >= 100 %}bg-success{% elif pct >= 50 %}bg-primary{% else %}bg-warning{% endif %}"
+                    <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full progress-fill {% if pct >= 100 %}bg-green-500{% elif pct >= 50 %}bg-indigo-500{% else %}bg-amber-500{% endif %}"
                              style="width: {% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%"></div>
                     </div>
                     {% endwith %}
@@ -107,48 +155,113 @@
                 {% endfor %}
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    {% endif %}
 
-    <!-- Recent Snapshots -->
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Histórico Semanal</h5>
-            </div>
-            <div class="card-body table-responsive">
-                <table class="table table-sm table-hover">
-                    <thead>
-                        <tr>
-                            <th>Semana</th>
-                            <th>Sessões Orgânicas</th>
-                            <th>GSC Cliques</th>
-                            <th>GSC Impressões</th>
-                            <th>CTR</th>
-                            <th>Posição</th>
-                            <th>Signups</th>
-                            <th>Top 10</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for snap in snapshots %}
-                        <tr>
-                            <td>{{ snap.week_start|date:"d/m" }} – {{ snap.week_end|date:"d/m" }}</td>
-                            <td>{{ snap.organic_sessions }}</td>
-                            <td>{{ snap.gsc_clicks }}</td>
-                            <td>{{ snap.gsc_impressions }}</td>
-                            <td>{{ snap.gsc_ctr }}%</td>
-                            <td>{{ snap.gsc_position }}</td>
-                            <td>{{ snap.signups }}</td>
-                            <td>{{ snap.keywords_top10 }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="8" class="text-muted text-center">Sem dados</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- Snapshots History Chart + Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-semibold text-gray-900 flex items-center gap-2">
+                <svg class="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Histórico Semanal
+            </h3>
+        </div>
+
+        {% if snapshots %}
+        <!-- Chart -->
+        <div class="p-6 border-b border-gray-100">
+            <canvas id="snapshotsChart" height="200"></canvas>
+        </div>
+        {% endif %}
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3 font-medium">Semana</th>
+                        <th class="px-6 py-3 font-medium">Sessões Org.</th>
+                        <th class="px-6 py-3 font-medium">GSC Cliques</th>
+                        <th class="px-6 py-3 font-medium">GSC Impressões</th>
+                        <th class="px-6 py-3 font-medium">CTR</th>
+                        <th class="px-6 py-3 font-medium">Posição</th>
+                        <th class="px-6 py-3 font-medium">Signups</th>
+                        <th class="px-6 py-3 font-medium">Top 10</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for snap in snapshots %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-3 font-medium text-gray-900">{{ snap.week_start|date:"d/m" }} – {{ snap.week_end|date:"d/m" }}</td>
+                        <td class="px-6 py-3 text-gray-700">{{ snap.organic_sessions }}</td>
+                        <td class="px-6 py-3 text-gray-700">{{ snap.gsc_clicks }}</td>
+                        <td class="px-6 py-3 text-gray-700">{{ snap.gsc_impressions }}</td>
+                        <td class="px-6 py-3 text-gray-700">{{ snap.gsc_ctr }}%</td>
+                        <td class="px-6 py-3 text-gray-700">{{ snap.gsc_position }}</td>
+                        <td class="px-6 py-3 text-gray-700">{{ snap.signups }}</td>
+                        <td class="px-6 py-3 text-gray-700">{{ snap.keywords_top10 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-gray-400">Sem dados registrados</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+
+{% if snapshots %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('snapshotsChart').getContext('2d');
+    const labels = [{% for snap in snapshots reversed %}"{{ snap.week_start|date:'d/m' }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const organicData = [{% for snap in snapshots reversed %}{{ snap.organic_sessions }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const clicksData = [{% for snap in snapshots reversed %}{{ snap.gsc_clicks }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Sessões Orgânicas',
+                    data: organicData,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99,102,241,0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#6366f1',
+                },
+                {
+                    label: 'Cliques GSC',
+                    data: clicksData,
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6,182,212,0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#06b6d4',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endif %}
 {% endblock %}

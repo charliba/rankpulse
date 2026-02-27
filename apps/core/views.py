@@ -1,6 +1,7 @@
 """Core views — Dashboard and main pages."""
 from __future__ import annotations
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Sum
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -8,6 +9,12 @@ from django.utils import timezone
 from .models import GA4EventDefinition, KPIGoal, Site, WeeklySnapshot
 
 
+def _base_context() -> dict:
+    """Common context for all views — sites list for sidebar."""
+    return {"sites": Site.objects.filter(is_active=True)}
+
+
+@login_required
 def dashboard(request):
     """Main dashboard showing all managed sites overview."""
     sites = Site.objects.filter(is_active=True)
@@ -29,12 +36,15 @@ def dashboard(request):
         })
 
     context = {
+        **_base_context(),
+        "page_title": "Dashboard",
         "site_data": site_data,
         "total_sites": sites.count(),
     }
     return render(request, "core/dashboard.html", context)
 
 
+@login_required
 def site_detail(request, site_id: int):
     """Detailed view of a single site's traffic data."""
     site = get_object_or_404(Site, pk=site_id, is_active=True)
@@ -53,6 +63,8 @@ def site_detail(request, site_id: int):
     events_done = events.filter(is_implemented=True)
 
     context = {
+        **_base_context(),
+        "page_title": site.name,
         "site": site,
         "snapshots": snapshots,
         "events_pending": events_pending,
@@ -62,6 +74,7 @@ def site_detail(request, site_id: int):
     return render(request, "core/site_detail.html", context)
 
 
+@login_required
 def weekly_report(request, site_id: int):
     """Weekly report form and history."""
     site = get_object_or_404(Site, pk=site_id, is_active=True)
@@ -96,6 +109,8 @@ def weekly_report(request, site_id: int):
         )
 
     context = {
+        **_base_context(),
+        "page_title": "Relatório Semanal",
         "site": site,
         "snapshots": snapshots,
     }
