@@ -6,14 +6,27 @@
 
 ## Apps e Modelos
 
-### `apps.core` — Núcleo
+### `apps.core` — Nucleo
 
-| Modelo | Descrição |
+| Modelo | Descricao |
 |--------|-----------|
-| `Site` | Website gerenciado (GA4, GSC, SEO config) |
-| `GA4EventDefinition` | Definição de evento GA4 (nome, JS snippet, server-side) |
-| `KPIGoal` | Meta de KPI por período (mês 1/3/6/12) |
-| `WeeklySnapshot` | Snapshot semanal de métricas (sessions, signups, GSC) |
+| `Site` | Website gerenciado (GA4, GSC, Google Ads, SEO config) |
+| `GA4EventDefinition` | Definicao de evento GA4 (nome, JS snippet, server-side) |
+| `KPIGoal` | Meta de KPI por periodo (mes 1/3/6/12) |
+| `WeeklySnapshot` | Snapshot semanal de metricas (sessions, signups, GSC) |
+
+#### Campos Google Ads no modelo `Site`:
+| Campo | Tipo | Descricao |
+|-------|------|----------|
+| `google_ads_customer_id` | CharField(30) | ID da conta (123-456-7890) |
+| `google_ads_developer_token` | CharField(100) | Token do Centro de API |
+| `google_ads_client_id` | CharField(200) | OAuth Client ID |
+| `google_ads_client_secret` | CharField(200) | OAuth Client Secret |
+| `google_ads_refresh_token` | CharField(500) | OAuth Refresh Token |
+| `google_ads_login_customer_id` | CharField(30) | MCC Account ID (opcional) |
+| `gsc_service_account_key` | TextField | JSON da Service Account GSC |
+| `ga4_service_account_key` | TextField | JSON da Service Account GA4 |
+| `google_ads_configured` | Property | True se 5 campos obrigatorios preenchidos |
 
 ### `apps.analytics` — Analytics
 

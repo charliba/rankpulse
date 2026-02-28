@@ -7,15 +7,17 @@
 
 ## Documentos
 
-| Documento | Descrição |
-|-----------|-----------|
-| [README.md](../README.md) | Visão geral, setup rápido, arquitetura |
+| Documento | Descricao |
+|-----------|----------|
+| [README.md](../README.md) | Visao geral, setup rapido, arquitetura |
 | [DEPLOY.md](DEPLOY.md) | Guia de deploy, workflow, troubleshooting |
-| [ENV.md](ENV.md) | Referência de variáveis de ambiente |
+| [ENV.md](ENV.md) | Referencia de variaveis de ambiente |
 | [SCHEMA.md](SCHEMA.md) | Schema do banco de dados (modelos) |
-| [SECURITY.md](SECURITY.md) | Configurações de segurança |
-| [AGENTS.md](AGENTS.md) | Instruções para agentes IA |
-| [REMEMBER_PROJECT.md](REMEMBER_PROJECT.md) | Lições aprendidas do projeto |
+| [SECURITY.md](SECURITY.md) | Configuracoes de seguranca |
+| [AGENTS.md](AGENTS.md) | Instrucoes para agentes IA |
+| [REMEMBER_PROJECT.md](REMEMBER_PROJECT.md) | Licoes aprendidas do projeto |
+| [GOOGLE_ADS_SETUP.md](GOOGLE_ADS_SETUP.md) | Guia completo de configuracao Google Ads API |
+| [SEO_SUGGESTIONS_BY_BEEZLE.md](SEO_SUGGESTIONS_BY_BEEZLE.md) | Checklist de SEO baseado no beezle.io |
 
 ---
 

@@ -1,12 +1,16 @@
 """Google Search Console API Client.
 
-Fetches search performance data using the Search Console API v1.
+Fetches search performance data, manages sitemaps, submits URLs for indexing,
+and inspects URL index status using the Search Console + Indexing APIs.
 
 Requirements:
     - Service account with Search Console access
     - google-api-python-client, google-auth installed
 
-Reference: https://developers.google.com/webmaster-tools/v1/api_reference_index
+Reference:
+    - https://developers.google.com/webmaster-tools/v1/api_reference_index
+    - https://developers.google.com/search/apis/indexing-api/v3/reference
+    - https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect
 """
 from __future__ import annotations
 
@@ -17,11 +21,12 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def _get_service(service_account_key_path: str):
+def _get_service(service_account_key_path: str, readonly: bool = True):
     """Build Search Console API service.
 
     Args:
         service_account_key_path: Path to the service account JSON key file.
+        readonly: If False, uses full webmasters scope (for sitemap submission).
 
     Returns:
         googleapiclient.discovery.Resource for searchconsole v1.
@@ -29,11 +34,35 @@ def _get_service(service_account_key_path: str):
     from google.oauth2 import service_account
     from googleapiclient.discovery import build
 
+    scope = (
+        "https://www.googleapis.com/auth/webmasters.readonly"
+        if readonly
+        else "https://www.googleapis.com/auth/webmasters"
+    )
     credentials = service_account.Credentials.from_service_account_file(
         service_account_key_path,
-        scopes=["https://www.googleapis.com/auth/webmasters.readonly"],
+        scopes=[scope],
     )
     return build("searchconsole", "v1", credentials=credentials)
+
+
+def _get_indexing_service(service_account_key_path: str):
+    """Build Indexing API v3 service.
+
+    Args:
+        service_account_key_path: Path to the service account JSON key file.
+
+    Returns:
+        googleapiclient.discovery.Resource for indexing v3.
+    """
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+
+    credentials = service_account.Credentials.from_service_account_file(
+        service_account_key_path,
+        scopes=["https://www.googleapis.com/auth/indexing"],
+    )
+    return build("indexing", "v3", credentials=credentials)
 
 
 class SearchConsoleClient:
@@ -51,13 +80,29 @@ class SearchConsoleClient:
         self.service_account_key_path = service_account_key_path
         self.site_url = site_url
         self._service = None
+        self._service_rw = None
+        self._indexing_service = None
 
     @property
     def service(self):
-        """Lazy-load the API service."""
+        """Lazy-load the read-only API service."""
         if self._service is None:
-            self._service = _get_service(self.service_account_key_path)
+            self._service = _get_service(self.service_account_key_path, readonly=True)
         return self._service
+
+    @property
+    def service_rw(self):
+        """Lazy-load the read-write API service (for sitemap submission)."""
+        if self._service_rw is None:
+            self._service_rw = _get_service(self.service_account_key_path, readonly=False)
+        return self._service_rw
+
+    @property
+    def indexing_service(self):
+        """Lazy-load the Indexing API v3 service."""
+        if self._indexing_service is None:
+            self._indexing_service = _get_indexing_service(self.service_account_key_path)
+        return self._indexing_service
 
     def fetch_performance(
         self,
@@ -182,28 +227,243 @@ class SearchConsoleClient:
         return results
 
     def submit_url_for_indexing(self, url: str) -> dict[str, Any]:
-        """Submit a URL for indexing via Indexing API.
+        """Submit a URL for indexing via Indexing API v3.
 
-        Note: Requires separate Indexing API credentials.
+        Args:
+            url: Full URL to submit (e.g., https://beezle.io/blog/post-1/).
+
+        Returns:
+            Dict with Indexing API response or error.
         """
-        from google.oauth2 import service_account
-        from googleapiclient.discovery import build
-
-        credentials = service_account.Credentials.from_service_account_file(
-            self.service_account_key_path,
-            scopes=["https://www.googleapis.com/auth/indexing"],
-        )
-        indexing_service = build("indexing", "v3", credentials=credentials)
-
         logger.info("Submitting URL for indexing: %s", url)
         try:
             response = (
-                indexing_service.urlNotifications()
+                self.indexing_service.urlNotifications()
                 .publish(body={"url": url, "type": "URL_UPDATED"})
                 .execute()
             )
             logger.info("Indexing response: %s", response)
-            return response
+            return {"success": True, "response": response}
         except Exception as exc:
             logger.error("Indexing API error: %s", exc)
-            return {"error": str(exc)}
+            return {"success": False, "error": str(exc)}
+
+    def remove_url_from_index(self, url: str) -> dict[str, Any]:
+        """Request removal of a URL from the index.
+
+        Args:
+            url: Full URL to remove.
+
+        Returns:
+            Dict with Indexing API response or error.
+        """
+        logger.info("Requesting URL removal: %s", url)
+        try:
+            response = (
+                self.indexing_service.urlNotifications()
+                .publish(body={"url": url, "type": "URL_DELETED"})
+                .execute()
+            )
+            logger.info("Removal response: %s", response)
+            return {"success": True, "response": response}
+        except Exception as exc:
+            logger.error("Indexing API removal error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def batch_submit_urls(self, urls: list[str]) -> list[dict[str, Any]]:
+        """Submit multiple URLs for indexing.
+
+        Args:
+            urls: List of full URLs to submit.
+
+        Returns:
+            List of results per URL.
+        """
+        results = []
+        for url in urls:
+            result = self.submit_url_for_indexing(url)
+            result["url"] = url
+            results.append(result)
+        return results
+
+    def get_indexing_status(self, url: str) -> dict[str, Any]:
+        """Get the notification status for a URL.
+
+        Args:
+            url: URL to check.
+
+        Returns:
+            Dict with notification metadata or error.
+        """
+        try:
+            response = (
+                self.indexing_service.urlNotifications()
+                .getMetadata(url=url)
+                .execute()
+            )
+            return {"success": True, "metadata": response}
+        except Exception as exc:
+            logger.error("Indexing status error for %s: %s", url, exc)
+            return {"success": False, "error": str(exc)}
+
+    # ── Sitemap Management ──────────────────────────────────────
+
+    def submit_sitemap(self, sitemap_url: str) -> dict[str, Any]:
+        """Submit a sitemap to Google Search Console.
+
+        Args:
+            sitemap_url: Full URL to the sitemap
+                         (e.g., https://beezle.io/sitemap.xml).
+
+        Returns:
+            Dict with success status.
+        """
+        logger.info("Submitting sitemap: %s for site %s", sitemap_url, self.site_url)
+        try:
+            self.service_rw.sitemaps().submit(
+                siteUrl=self.site_url,
+                feedpath=sitemap_url,
+            ).execute()
+            logger.info("Sitemap submitted successfully: %s", sitemap_url)
+            return {"success": True, "sitemap_url": sitemap_url}
+        except Exception as exc:
+            logger.error("Sitemap submission error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def list_sitemaps(self) -> dict[str, Any]:
+        """List all sitemaps registered for the site.
+
+        Returns:
+            Dict with list of sitemaps and their status.
+        """
+        logger.info("Listing sitemaps for %s", self.site_url)
+        try:
+            response = self.service_rw.sitemaps().list(
+                siteUrl=self.site_url,
+            ).execute()
+            sitemaps = response.get("sitemap", [])
+            results = []
+            for sm in sitemaps:
+                results.append({
+                    "path": sm.get("path", ""),
+                    "type": sm.get("type", ""),
+                    "last_submitted": sm.get("lastSubmitted", ""),
+                    "last_downloaded": sm.get("lastDownloaded", ""),
+                    "is_pending": sm.get("isPending", False),
+                    "warnings": sm.get("warnings", 0),
+                    "errors": sm.get("errors", 0),
+                    "contents": sm.get("contents", []),
+                })
+            logger.info("Found %d sitemaps", len(results))
+            return {"success": True, "sitemaps": results, "count": len(results)}
+        except Exception as exc:
+            logger.error("Sitemap list error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def delete_sitemap(self, sitemap_url: str) -> dict[str, Any]:
+        """Delete a sitemap from Google Search Console.
+
+        Args:
+            sitemap_url: Full URL of the sitemap to remove.
+
+        Returns:
+            Dict with success status.
+        """
+        logger.info("Deleting sitemap: %s for site %s", sitemap_url, self.site_url)
+        try:
+            self.service_rw.sitemaps().delete(
+                siteUrl=self.site_url,
+                feedpath=sitemap_url,
+            ).execute()
+            logger.info("Sitemap deleted: %s", sitemap_url)
+            return {"success": True, "deleted": sitemap_url}
+        except Exception as exc:
+            logger.error("Sitemap delete error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_sitemap(self, sitemap_url: str) -> dict[str, Any]:
+        """Get details of a specific sitemap.
+
+        Args:
+            sitemap_url: Full URL of the sitemap.
+
+        Returns:
+            Dict with sitemap details or error.
+        """
+        try:
+            response = self.service_rw.sitemaps().get(
+                siteUrl=self.site_url,
+                feedpath=sitemap_url,
+            ).execute()
+            return {"success": True, "sitemap": response}
+        except Exception as exc:
+            logger.error("Sitemap get error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # ── URL Inspection ──────────────────────────────────────────
+
+    def inspect_url(self, url: str) -> dict[str, Any]:
+        """Inspect a URL's index status via the URL Inspection API.
+
+        Args:
+            url: Full URL to inspect (e.g., https://beezle.io/blog/post-1/).
+
+        Returns:
+            Dict with coverage state, indexing state, crawl info, etc.
+        """
+        logger.info("Inspecting URL: %s", url)
+        try:
+            response = self.service.urlInspection().index().inspect(
+                body={
+                    "inspectionUrl": url,
+                    "siteUrl": self.site_url,
+                },
+            ).execute()
+
+            result = response.get("inspectionResult", {})
+            index_status = result.get("indexStatusResult", {})
+            crawl_info = index_status.get("crawledAs", "")
+            coverage = index_status.get("coverageState", "")
+            verdict = index_status.get("verdict", "")
+            indexing_state = index_status.get("indexingState", "")
+            last_crawl = index_status.get("lastCrawlTime", "")
+            page_fetch = index_status.get("pageFetchState", "")
+            robots_state = index_status.get("robotsTxtState", "")
+            referring_urls = index_status.get("referringUrls", [])
+
+            mobile = result.get("mobileUsabilityResult", {})
+            rich_results = result.get("richResultsResult", {})
+
+            return {
+                "success": True,
+                "url": url,
+                "verdict": verdict,
+                "coverage_state": coverage,
+                "indexing_state": indexing_state,
+                "crawled_as": crawl_info,
+                "last_crawl_time": last_crawl,
+                "page_fetch_state": page_fetch,
+                "robots_txt_state": robots_state,
+                "referring_urls": referring_urls,
+                "mobile_usability": mobile.get("verdict", ""),
+                "rich_results": rich_results.get("verdict", ""),
+            }
+        except Exception as exc:
+            logger.error("URL Inspection error for %s: %s", url, exc)
+            return {"success": False, "url": url, "error": str(exc)}
+
+    def batch_inspect_urls(self, urls: list[str]) -> list[dict[str, Any]]:
+        """Inspect multiple URLs for index status.
+
+        Args:
+            urls: List of URLs to inspect.
+
+        Returns:
+            List of inspection results.
+        """
+        results = []
+        for url in urls:
+            result = self.inspect_url(url)
+            results.append(result)
+        return results
+

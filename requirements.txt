@@ -9,6 +9,9 @@ python-dotenv>=1.0
 google-api-python-client>=2.100
 google-auth-httplib2>=0.2
 google-auth-oauthlib>=1.2
+google-analytics-data>=0.18        # GA4 Data API (reporting)
+google-analytics-admin>=0.22       # GA4 Admin API (key events, streams)
+google-ads>=25.1                   # Google Ads API (campaigns, ads, keywords)
 
 # AI Content Generation
 openai>=1.30

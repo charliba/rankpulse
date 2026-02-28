@@ -69,11 +69,24 @@ trafic_provider/.env.example  ← Template de referência (versionado)
 | `GA4_PROPERTY_ID` | Property ID (Data API) |
 | `GA4_SERVICE_ACCOUNT_KEY_PATH` | JSON da service account |
 
-### 🔍 Google Search Console
-| Variável | Descrição |
+### Google Search Console
+| Variavel | Descricao |
 |----------|-----------|
 | `GSC_SERVICE_ACCOUNT_KEY_PATH` | JSON da service account |
 | `GSC_SITE_URL` | URL do site no GSC |
+
+### Google Ads API
+| Variavel | Descricao | Exemplo |
+|----------|-----------|--------|
+| `GOOGLE_ADS_CUSTOMER_ID` | ID da conta do cliente | `329-436-3393` |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Token do Centro de API (MCC) | `Nut3gTRDWPH...` |
+| `GOOGLE_ADS_CLIENT_ID` | OAuth Client ID | `109036...apps.googleusercontent.com` |
+| `GOOGLE_ADS_CLIENT_SECRET` | OAuth Client Secret | `GOCSPX-...` |
+| `GOOGLE_ADS_REFRESH_TOKEN` | OAuth Refresh Token (100+ chars) | `1//0han...` |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | ID conta MCC (opcional) | `259-958-1821` |
+
+> **NOTA:** Credenciais sao armazenadas **per-site** no banco (modelo `Site`).
+> As variaveis `.env` servem como fallback e para o script `_generate_refresh_token.py`.
 
 ### 🤖 OpenAI
 | Variável | Descrição | Exemplo |

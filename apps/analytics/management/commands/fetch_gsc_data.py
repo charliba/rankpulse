@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from datetime import date, timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
 
 from apps.analytics.models import SearchConsoleData
@@ -33,22 +34,35 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Nenhum site encontrado com GSC verificado."))
             return
 
+        # Resolve service account key path
+        key_path = getattr(settings, "GSC_SERVICE_ACCOUNT_KEY_PATH", "")
+        if not key_path:
+            self.stdout.write(self.style.ERROR(
+                "GSC_SERVICE_ACCOUNT_KEY_PATH not set in settings/.env",
+            ))
+            return
+
         end_date = date.today() - timedelta(days=3)  # GSC data has ~3 day delay
         start_date = end_date - timedelta(days=days)
 
         for site in sites:
             self.stdout.write(f"\n📊 Fetching GSC: {site.name} ({start_date} → {end_date})")
 
+            site_url = site.gsc_site_url or site.url
             try:
-                client = SearchConsoleClient()
-                data = client.fetch_performance(
-                    site_url=site.gsc_site_url or site.url,
-                    start_date=start_date.isoformat(),
-                    end_date=end_date.isoformat(),
+                client = SearchConsoleClient(
+                    service_account_key_path=key_path,
+                    site_url=site_url,
+                )
+                rows = client.fetch_performance(
+                    start_date=start_date,
+                    end_date=end_date,
+                    dimensions=["query", "page"],
+                    row_limit=1000,
                 )
 
                 rows_saved = 0
-                for row in data.get("rows", []):
+                for row in rows:
                     keys = row.get("keys", [])
                     query = keys[0] if len(keys) > 0 else ""
                     page = keys[1] if len(keys) > 1 else ""

@@ -1,9 +1,13 @@
-"""Core forms — Site and Event management."""
+"""Core forms — Site, Event, KPI and Integrations management."""
 from __future__ import annotations
 
 from django import forms
 
 from .models import GA4EventDefinition, KPIGoal, Site
+
+_INPUT = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+_TEXTAREA = f"{_INPUT} resize-none font-mono"
+_CHECK = "rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-5 w-5"
 
 
 class SiteForm(forms.ModelForm):
@@ -159,3 +163,89 @@ class KPIGoalForm(forms.ModelForm):
                 "placeholder": "R$, %, unidades",
             }),
         }
+
+
+class IntegrationsForm(forms.ModelForm):
+    """Form for configuring Google Ads, GA4 and GSC per-site credentials."""
+
+    # Password fields that must preserve existing values when left blank.
+    _SECRET_FIELDS = ("google_ads_client_secret", "google_ads_refresh_token")
+
+    class Meta:
+        model = Site
+        fields = [
+            # GA4
+            "ga4_measurement_id",
+            "ga4_api_secret",
+            "ga4_property_id",
+            # GSC
+            "gsc_site_url",
+            "gsc_verified",
+            # Google Ads
+            "google_ads_customer_id",
+            "google_ads_developer_token",
+            "google_ads_client_id",
+            "google_ads_client_secret",
+            "google_ads_refresh_token",
+            "google_ads_login_customer_id",
+            # Service Account Keys
+            "gsc_service_account_key",
+            "ga4_service_account_key",
+        ]
+        widgets = {
+            "ga4_measurement_id": forms.TextInput(attrs={
+                "class": _INPUT, "placeholder": "G-XXXXXXXXXX",
+            }),
+            "ga4_api_secret": forms.TextInput(attrs={
+                "class": _INPUT, "placeholder": "Ex: pFUeJMUfTWuMwim6NYe0Uw",
+            }),
+            "ga4_property_id": forms.TextInput(attrs={
+                "class": _INPUT, "placeholder": "Ex: 526327250",
+            }),
+            "gsc_site_url": forms.URLInput(attrs={
+                "class": _INPUT, "placeholder": "https://seusite.com.br",
+            }),
+            "gsc_verified": forms.CheckboxInput(attrs={"class": _CHECK}),
+            "google_ads_customer_id": forms.TextInput(attrs={
+                "class": _INPUT, "placeholder": "123-456-7890",
+            }),
+            "google_ads_developer_token": forms.TextInput(attrs={
+                "class": _INPUT, "placeholder": "Token da API do Google Ads",
+            }),
+            "google_ads_client_id": forms.TextInput(attrs={
+                "class": _INPUT, "placeholder": "xxxx.apps.googleusercontent.com",
+            }),
+            "google_ads_client_secret": forms.PasswordInput(attrs={
+                "class": _INPUT, "placeholder": "Manter atual (deixe vazio)",
+                "autocomplete": "new-password",
+            }),
+            "google_ads_refresh_token": forms.PasswordInput(attrs={
+                "class": _INPUT, "placeholder": "Manter atual (deixe vazio)",
+                "autocomplete": "new-password",
+            }),
+            "google_ads_login_customer_id": forms.TextInput(attrs={
+                "class": _INPUT, "placeholder": "Opcional — ID da conta MCC",
+            }),
+            "gsc_service_account_key": forms.Textarea(attrs={
+                "class": _TEXTAREA, "rows": 4,
+                "placeholder": '{"type": "service_account", "project_id": "...", ...}',
+            }),
+            "ga4_service_account_key": forms.Textarea(attrs={
+                "class": _TEXTAREA, "rows": 4,
+                "placeholder": '{"type": "service_account", "project_id": "...", ...}',
+            }),
+        }
+
+    def save(self, commit: bool = True) -> Site:
+        """Preserve secret fields when the user leaves them blank."""
+        instance = super().save(commit=False)
+        if self.instance.pk:
+            for field in self._SECRET_FIELDS:
+                if not self.cleaned_data.get(field):
+                    # Restore the value from the database
+                    setattr(instance, field, getattr(
+                        Site.objects.get(pk=self.instance.pk), field,
+                    ))
+        if commit:
+            instance.save()
+        return instance

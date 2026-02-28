@@ -40,6 +40,42 @@ class Site(models.Model):
     gsc_verified = models.BooleanField(default=False, verbose_name="GSC Verificado")
     gsc_site_url = models.URLField(blank=True, verbose_name="GSC Site URL")
 
+    # Google Ads
+    google_ads_customer_id = models.CharField(
+        max_length=30, blank=True, verbose_name="Google Ads Customer ID",
+        help_text="Formato: 123-456-7890 (encontre em ads.google.com no canto superior direito)",
+    )
+    google_ads_developer_token = models.CharField(
+        max_length=100, blank=True, verbose_name="Developer Token",
+        help_text="Token obtido no MCC → Ferramentas → Centro de API",
+    )
+    google_ads_client_id = models.CharField(
+        max_length=200, blank=True, verbose_name="OAuth Client ID",
+        help_text="ID do cliente OAuth2 do Google Cloud Console",
+    )
+    google_ads_client_secret = models.CharField(
+        max_length=200, blank=True, verbose_name="OAuth Client Secret",
+        help_text="Secret do cliente OAuth2 do Google Cloud Console",
+    )
+    google_ads_refresh_token = models.CharField(
+        max_length=500, blank=True, verbose_name="OAuth Refresh Token",
+        help_text="Token de atualização gerado via fluxo de consentimento OAuth2",
+    )
+    google_ads_login_customer_id = models.CharField(
+        max_length=30, blank=True, verbose_name="Login Customer ID (MCC)",
+        help_text="Opcional — ID da conta MCC gerenciadora, se aplicável",
+    )
+
+    # Service Account Keys (file paths on server)
+    gsc_service_account_key = models.TextField(
+        blank=True, verbose_name="GSC Service Account JSON",
+        help_text="Conteúdo completo do JSON da Service Account do Google Search Console",
+    )
+    ga4_service_account_key = models.TextField(
+        blank=True, verbose_name="GA4 Service Account JSON",
+        help_text="Conteúdo completo do JSON da Service Account do GA4 Data API",
+    )
+
     # SEO basics
     sitemap_url = models.URLField(blank=True, verbose_name="Sitemap URL")
     robots_txt_url = models.URLField(blank=True, verbose_name="robots.txt URL")
@@ -56,6 +92,17 @@ class Site(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.domain})"
+
+    @property
+    def google_ads_configured(self) -> bool:
+        """Check if all required Google Ads credentials are set."""
+        return bool(
+            self.google_ads_customer_id
+            and self.google_ads_developer_token
+            and self.google_ads_client_id
+            and self.google_ads_client_secret
+            and self.google_ads_refresh_token
+        )
 
 
 class GA4EventDefinition(models.Model):
