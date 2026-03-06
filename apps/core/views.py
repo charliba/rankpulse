@@ -45,9 +45,9 @@ def _get_user_site(request, site_id: int) -> Site:
 
 
 def landing_view(request):
-    """Public landing page — redirects to dashboard if already logged in."""
+    """Public landing page — redirects to app subdomain if already logged in."""
     if request.user.is_authenticated:
-        return redirect("core:dashboard")
+        return redirect("https://app.rankpulse.cloud/dashboard/")
     return render(request, "pages/landing.html", {
         "year": date.today().year,
     })

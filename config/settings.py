@@ -155,7 +155,12 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 # ─── App Identity ────────────────────────────────────
 APP_NAME = os.getenv("APP_NAME", "RankPulse")
 APP_DOMAIN = os.getenv("APP_DOMAIN", "rankpulse.cloud")
-APP_URL = os.getenv("APP_URL", "https://rankpulse.cloud")
+APP_URL = os.getenv("APP_URL", f"https://app.{APP_DOMAIN}")
+
+# ─── Cross-subdomain cookies (SaaS pattern) ─────────
+# rankpulse.cloud = marketing, app.rankpulse.cloud = app
+SESSION_COOKIE_DOMAIN = f".{APP_DOMAIN}"
+CSRF_COOKIE_DOMAIN = f".{APP_DOMAIN}"
 
 # ─── Production Security ─────────────────────────────
 # These settings are ONLY applied when DEBUG=False (production).
