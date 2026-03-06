@@ -216,12 +216,18 @@ def main() -> None:
         for app in ("core", "channels", "analytics", "seo", "content", "checklists", "chat_support"):
             run_cmd(client, f"find {BASE}/apps/{app}/migrations -name '*.py' ! -name '__init__.py' -delete 2>/dev/null")
             run_cmd(client, f"find {BASE}/apps/{app}/migrations -name '*.pyc' -delete 2>/dev/null")
-        # Dropar e recriar o banco PostgreSQL
-        db_name_out, _ = run_cmd(client, f"grep -oP '(?<=DB_NAME=).*' {BASE}/.env 2>/dev/null")
-        db_name = db_name_out.strip() or "rankpulse"
-        run_cmd(client, f"sudo -u postgres psql -c 'DROP DATABASE IF EXISTS {db_name};' 2>&1", timeout=30)
-        run_cmd(client, f"sudo -u postgres psql -c \"CREATE DATABASE {db_name} OWNER rankpulse;\" 2>&1", timeout=30)
-        print(f"    DB '{db_name}' recriado")
+        # Detectar engine e resetar adequadamente
+        db_engine_out, _ = run_cmd(client, f"grep -oP '(?<=DB_ENGINE=).*' {BASE}/.env 2>/dev/null")
+        db_engine = db_engine_out.strip()
+        if "postgresql" in db_engine:
+            db_name_out, _ = run_cmd(client, f"grep -oP '(?<=DB_NAME=).*' {BASE}/.env 2>/dev/null")
+            db_name = db_name_out.strip() or "rankpulse"
+            run_cmd(client, f"sudo -u postgres psql -c 'DROP DATABASE IF EXISTS {db_name};' 2>&1", timeout=30)
+            run_cmd(client, f"sudo -u postgres psql -c \"CREATE DATABASE {db_name} OWNER rankpulse;\" 2>&1", timeout=30)
+            print(f"    DB PostgreSQL '{db_name}' recriado")
+        else:
+            run_cmd(client, f"rm -f {BASE}/db.sqlite3")
+            print("    DB SQLite removido (será recriado pelo migrate)")
         sys.stdout.flush()
 
     # Gerar migrations para todos os apps (necessário pois migrations são criadas no servidor)
