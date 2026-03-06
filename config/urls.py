@@ -6,12 +6,15 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
 from apps.core.views import landing_view, privacy_view, register, terms_view
+from apps.channels.views import meta_oauth_callback
 
 urlpatterns = [
     # Public pages
     path("", landing_view, name="landing"),
     path("privacy/", privacy_view, name="privacy"),
     path("terms/", terms_view, name="terms"),
+    # Meta OAuth callback (fixed URL for Facebook redirect)
+    path("channels/oauth/meta/callback/", meta_oauth_callback, name="meta_oauth_callback_root"),
     # Admin
     path("admin/", admin.site.urls),
     # Auth

@@ -458,7 +458,7 @@ def meta_oauth_start(request, channel_id: int):
         )
 
     app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
-    redirect_uri = f"https://app.{app_domain}/channels/{channel.pk}/oauth/meta/callback/"
+    redirect_uri = f"https://app.{app_domain}/channels/oauth/meta/callback/"
 
     params = {
         "client_id": META_APP_ID,
@@ -473,11 +473,18 @@ def meta_oauth_start(request, channel_id: int):
 
 
 @login_required
-def meta_oauth_callback(request, channel_id: int):
+def meta_oauth_callback(request):
     """Handle Facebook OAuth callback — exchange code for long-lived token."""
-    channel = _get_user_channel(request, channel_id)
     code = request.GET.get("code", "")
     error = request.GET.get("error", "")
+    state = request.GET.get("state", "")
+
+    if not state:
+        messages.error(request, "Parâmetro state ausente no callback.")
+        return redirect("core:dashboard")
+
+    channel_id = int(state)
+    channel = _get_user_channel(request, channel_id)
 
     if error:
         error_reason = request.GET.get("error_reason", "")
@@ -491,7 +498,7 @@ def meta_oauth_callback(request, channel_id: int):
     import requests as http_requests
 
     app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
-    redirect_uri = f"https://app.{app_domain}/channels/{channel.pk}/oauth/meta/callback/"
+    redirect_uri = f"https://app.{app_domain}/channels/oauth/meta/callback/"
 
     # Exchange code for short-lived token
     try:
