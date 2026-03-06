@@ -1,0 +1,307 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RankPulse — Traffic Administration Platform</title>
+    <meta name="description" content="RankPulse is an all-in-one traffic administration platform. Manage SEO audits, Google Ads, Meta Ads, GA4 analytics, and AI-powered content from a single dashboard.">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        'primary-dark': '#4f46e5',
+                        'primary-light': '#a5b4fc',
+                    }
+                }
+            }
+        }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+    <style>
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-up { animation: fadeInUp .6s ease-out both; }
+        .fade-in-up-d1 { animation-delay: .1s; }
+        .fade-in-up-d2 { animation-delay: .2s; }
+        .fade-in-up-d3 { animation-delay: .3s; }
+    </style>
+</head>
+
+<body class="bg-white text-gray-900 antialiased" x-data="{ mobileMenu: false }">
+
+<!-- ═══ NAVBAR ═══ -->
+<nav class="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+    <div class="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2">
+            <img src="{% static 'img/logo.svg' %}" alt="RankPulse" class="h-9 w-9">
+            <span class="text-xl font-bold text-gray-900">RankPulse</span>
+        </a>
+
+        <!-- Desktop nav -->
+        <div class="hidden md:flex items-center gap-8">
+            <a href="#features" class="text-sm text-gray-600 hover:text-primary transition-colors">Features</a>
+            <a href="#about" class="text-sm text-gray-600 hover:text-primary transition-colors">About</a>
+            <a href="{% url 'login' %}" class="text-sm text-gray-600 hover:text-primary transition-colors">Log In</a>
+            <a href="{% url 'login' %}" class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-dark transition-colors">
+                Get Started
+            </a>
+        </div>
+
+        <!-- Mobile hamburger -->
+        <button @click="mobileMenu = !mobileMenu" class="md:hidden p-2 text-gray-600">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path x-show="!mobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                <path x-show="mobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div x-show="mobileMenu" x-transition class="md:hidden bg-white border-b border-gray-100 px-4 pb-4 space-y-2">
+        <a href="#features" @click="mobileMenu = false" class="block py-2 text-gray-600">Features</a>
+        <a href="#about" @click="mobileMenu = false" class="block py-2 text-gray-600">About</a>
+        <a href="{% url 'login' %}" class="block py-2 text-gray-600">Log In</a>
+        <a href="{% url 'login' %}" class="block py-2 text-center bg-primary text-white rounded-lg font-medium">Get Started</a>
+    </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="pt-32 pb-20 sm:pt-40 sm:pb-28">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto text-center">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 fade-in-up">
+                All-in-one <span class="text-primary">traffic administration</span> platform
+            </h1>
+            <p class="mt-6 text-lg sm:text-xl text-gray-600 leading-relaxed fade-in-up fade-in-up-d1">
+                Manage SEO audits, Google Ads, Meta Ads, GA4 analytics, and AI-powered content generation — from a single dashboard.
+            </p>
+            <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center fade-in-up fade-in-up-d2">
+                <a href="{% url 'login' %}"
+                   class="px-8 py-4 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-lg shadow-indigo-200">
+                    Start Free
+                </a>
+                <a href="#features"
+                   class="px-8 py-4 bg-white text-gray-700 font-semibold rounded-xl border border-gray-200 hover:border-primary hover:text-primary transition-colors">
+                    Explore Features
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section id="features" class="py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">Everything you need to scale traffic</h2>
+            <p class="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+                One platform for organic and paid traffic management, analytics, and content optimization.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- SEO Audit -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">SEO Audit</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Automated page-level SEO scoring (0–100) with actionable recommendations for titles, meta descriptions, headings, and content quality.
+                </p>
+            </div>
+
+            <!-- GA4 + GSC -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div class="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">GA4 &amp; Search Console</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Real-time Google Analytics 4 and Search Console integration. Track sessions, impressions, clicks, CTR, and average position.
+                </p>
+            </div>
+
+            <!-- Google Ads -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Google Ads Management</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Create and manage Search &amp; Display campaigns, control budgets, build RSA ads, target keywords, and track conversions — all via the Google Ads API.
+                </p>
+            </div>
+
+            <!-- Meta Ads -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Meta Ads Management</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Manage Facebook and Instagram ad campaigns, ad sets, and creatives. Monitor performance insights directly from one unified dashboard.
+                </p>
+            </div>
+
+            <!-- AI Content -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">AI Content Generation</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Generate SEO-optimized blog posts, product descriptions, and meta tags with OpenAI integration. Auto-suggest content improvements.
+                </p>
+            </div>
+
+            <!-- KPI Reports -->
+            <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-5">
+                    <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">KPI &amp; Weekly Reports</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Define KPI goals, track weekly snapshots, and receive automated reports comparing performance against targets across all your sites.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ ABOUT ═══ -->
+<section id="about" class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+            <div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">About RankPulse</h2>
+                <p class="text-lg text-gray-600 leading-relaxed mb-6">
+                    RankPulse is a comprehensive traffic administration platform built for digital marketing professionals, agencies, and businesses that need to manage organic and paid traffic at scale.
+                </p>
+                <p class="text-lg text-gray-600 leading-relaxed mb-6">
+                    We integrate directly with the Google Ads API, Meta Marketing API, Google Analytics 4, Google Search Console, and OpenAI to provide a unified workspace for campaign management, SEO optimization, content generation, and performance reporting.
+                </p>
+                <p class="text-lg text-gray-600 leading-relaxed">
+                    Our mission is to simplify multi-channel traffic management by consolidating all essential tools into one secure, efficient platform — so you can focus on scaling results instead of switching between dashboards.
+                </p>
+            </div>
+            <div class="mt-12 lg:mt-0">
+                <div class="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-2xl p-10 text-white">
+                    <h3 class="text-2xl font-bold mb-6">Platform Highlights</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3">
+                            <svg class="w-6 h-6 text-indigo-300 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>Multi-account MCC support for managing multiple clients</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-6 h-6 text-indigo-300 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>OAuth 2.0 secure integration — no passwords stored</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-6 h-6 text-indigo-300 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>SSL/TLS encryption with HSTS for all traffic</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-6 h-6 text-indigo-300 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>LGPD &amp; GDPR compliant data handling</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <svg class="w-6 h-6 text-indigo-300 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            <span>AI-powered content generation and SEO recommendations</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="py-20 bg-gradient-to-br from-indigo-600 to-indigo-900">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to take control of your traffic?</h2>
+        <p class="text-xl text-indigo-200 mb-10">Start managing all your campaigns and analytics from one place.</p>
+        <a href="{% url 'login' %}"
+           class="inline-block px-10 py-4 bg-white text-indigo-700 font-semibold rounded-xl hover:bg-gray-100 transition-colors shadow-lg">
+            Get Started — It's Free
+        </a>
+    </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="bg-gray-900 text-gray-400 py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid md:grid-cols-3 gap-12">
+            <!-- Brand -->
+            <div>
+                <div class="flex items-center gap-2 mb-4">
+                    <img src="{% static 'img/logo.svg' %}" alt="RankPulse" class="h-8 w-8 brightness-200">
+                    <span class="text-lg font-bold text-white">RankPulse</span>
+                </div>
+                <p class="text-sm leading-relaxed">
+                    Traffic Administration Platform.<br>
+                    Organic &amp; paid traffic management, analytics, and AI content — unified.
+                </p>
+            </div>
+
+            <!-- Links -->
+            <div>
+                <h4 class="text-white font-semibold mb-4">Links</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
+                    <li><a href="#about" class="hover:text-white transition-colors">About Us</a></li>
+                    <li><a href="{% url 'privacy' %}" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    <li><a href="{% url 'terms' %}" class="hover:text-white transition-colors">Terms of Service</a></li>
+                </ul>
+            </div>
+
+            <!-- Contact -->
+            <div>
+                <h4 class="text-white font-semibold mb-4">Contact</h4>
+                <ul class="space-y-2 text-sm">
+                    <li>
+                        <a href="mailto:contato@rankpulse.cloud" class="hover:text-white transition-colors">
+                            contato@rankpulse.cloud
+                        </a>
+                    </li>
+                    <li>Rio de Janeiro, RJ — Brazil</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-800 mt-12 pt-8 text-center text-sm">
+            <p>&copy; {{ year }} RankPulse. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

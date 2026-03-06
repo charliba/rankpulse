@@ -5,9 +5,13 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
-from apps.core.views import register
+from apps.core.views import landing_view, privacy_view, register, terms_view
 
 urlpatterns = [
+    # Public pages
+    path("", landing_view, name="landing"),
+    path("privacy/", privacy_view, name="privacy"),
+    path("terms/", terms_view, name="terms"),
     # Admin
     path("admin/", admin.site.urls),
     # Auth

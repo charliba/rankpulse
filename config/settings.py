@@ -115,7 +115,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ─── Auth / Login ────────────────────────────────────
 LOGIN_URL = "/login/"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/login/"
 
 # ─── REST Framework ───────────────────────────────────
@@ -173,6 +173,7 @@ if not DEBUG:
     CSRF_TRUSTED_ORIGINS = [
         f"https://{APP_DOMAIN}",
         f"https://www.{APP_DOMAIN}",
+        f"https://app.{APP_DOMAIN}",
     ]
 
 # ─── Gunicorn / Deploy ──────────────────────────────

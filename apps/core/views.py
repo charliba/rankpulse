@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import date
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -38,6 +39,34 @@ def _get_user_site(request, site_id: int) -> Site:
         pk=site_id,
         project__owner=request.user,
     )
+
+
+# ── Public Pages ───────────────────────────────────────
+
+
+def landing_view(request):
+    """Public landing page — redirects to dashboard if already logged in."""
+    if request.user.is_authenticated:
+        return redirect("core:dashboard")
+    return render(request, "pages/landing.html", {
+        "year": date.today().year,
+    })
+
+
+def privacy_view(request):
+    """Public privacy policy page."""
+    return render(request, "pages/privacy.html", {
+        "year": date.today().year,
+        "today": date.today().strftime("%B %d, %Y"),
+    })
+
+
+def terms_view(request):
+    """Public terms of service page."""
+    return render(request, "pages/terms.html", {
+        "year": date.today().year,
+        "today": date.today().strftime("%B %d, %Y"),
+    })
 
 
 # ── Dashboard ──────────────────────────────────────────
@@ -483,7 +512,7 @@ def register(request):
         )
         login(request, user)
         messages.success(request, f"Bem-vindo, {user.username}! Conta criada com sucesso.")
-        return redirect("/")
+        return redirect("core:dashboard")
 
     return render(request, "pages/auth.html", {"tab": "register"})
 

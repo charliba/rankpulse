@@ -7,7 +7,7 @@ app_name = "core"
 
 urlpatterns = [
     # Dashboard
-    path("", views.dashboard, name="dashboard"),
+    path("dashboard/", views.dashboard, name="dashboard"),
     # Project CRUD
     path("project/add/", views.project_add, name="project_add"),
     path("project/<int:project_id>/", views.project_detail, name="project_detail"),

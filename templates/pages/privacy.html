@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — RankPulse</title>
+    <meta name="description" content="RankPulse Privacy Policy — How we collect, use, and protect your data.">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: '#6366f1', 'primary-dark': '#4f46e5' } } }
+        }
+    </script>
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+</head>
+
+<body class="bg-white text-gray-900 antialiased">
+
+<!-- Navbar -->
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-4xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+        <a href="/" class="flex items-center gap-2">
+            <img src="{% static 'img/logo.svg' %}" alt="RankPulse" class="h-8 w-8">
+            <span class="text-xl font-bold text-gray-900">RankPulse</span>
+        </a>
+        <a href="{% url 'login' %}" class="text-sm text-gray-600 hover:text-primary transition-colors">Log In</a>
+    </div>
+</nav>
+
+<!-- Content -->
+<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h1 class="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
+    <p class="text-gray-500 mb-12">Last updated: {{ today }}</p>
+
+    <div class="prose prose-lg prose-gray max-w-none space-y-10 text-gray-700 leading-relaxed">
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">1. Introduction</h2>
+            <p>
+                RankPulse ("we", "us", or "our") operates the website <strong>rankpulse.cloud</strong> and the RankPulse traffic administration platform (the "Service"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Service.
+            </p>
+            <p>
+                By using the Service, you agree to the collection and use of information in accordance with this policy. If you do not agree, please do not use the Service.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">2. Information We Collect</h2>
+
+            <h3 class="text-xl font-medium text-gray-900 mt-6">2.1 Account Information</h3>
+            <p>When you create an account, we collect your username, email address, and password (stored as a secure hash — we never store plaintext passwords).</p>
+
+            <h3 class="text-xl font-medium text-gray-900 mt-6">2.2 Third-Party API Credentials</h3>
+            <p>To provide our core functionality, we store OAuth tokens and API credentials for the following integrations on your behalf:</p>
+            <ul class="list-disc pl-6 space-y-1">
+                <li><strong>Google Analytics 4 (GA4)</strong> — Measurement ID, Property ID, service account keys</li>
+                <li><strong>Google Search Console (GSC)</strong> — Service account keys, site URL</li>
+                <li><strong>Google Ads</strong> — OAuth 2.0 refresh tokens, customer IDs, developer tokens (stored encrypted in our database)</li>
+                <li><strong>Meta Ads (Facebook/Instagram)</strong> — Access tokens, ad account IDs</li>
+                <li><strong>OpenAI</strong> — API key for content generation</li>
+            </ul>
+            <p>These credentials are used solely to perform API operations you request through the platform. We do not share them with third parties.</p>
+
+            <h3 class="text-xl font-medium text-gray-900 mt-6">2.3 Usage Data</h3>
+            <p>We may collect non-personal information such as browser type, operating system, pages visited, and time spent on the platform for the purpose of improving our Service.</p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">3. How We Use Your Information</h2>
+            <ul class="list-disc pl-6 space-y-1">
+                <li>To provide and maintain the Service, including campaign management, analytics, and reporting</li>
+                <li>To communicate API calls to Google Ads, Meta Marketing API, GA4, GSC, and OpenAI on your behalf</li>
+                <li>To authenticate your identity and protect your account</li>
+                <li>To send you important notices about the Service (e.g., security alerts, maintenance)</li>
+                <li>To improve and optimize the platform</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">4. Data Security</h2>
+            <p>
+                We implement industry-standard security measures to protect your data:
+            </p>
+            <ul class="list-disc pl-6 space-y-1">
+                <li>All traffic is encrypted via SSL/TLS (HTTPS enforced with HSTS)</li>
+                <li>Passwords are hashed using Django's PBKDF2 algorithm</li>
+                <li>OAuth tokens are stored in our database with restricted access</li>
+                <li>CSRF and XSS protections are enabled across the platform</li>
+                <li>Server access is limited to key-based SSH authentication</li>
+            </ul>
+            <p>While we strive to protect your information, no method of electronic storage is 100% secure. We cannot guarantee absolute security.</p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">5. Third-Party Services</h2>
+            <p>
+                Our Service integrates with third-party APIs. When you connect your Google Ads, Meta Ads, GA4, GSC, or OpenAI accounts, data is transmitted between our platform and those services in accordance with their respective privacy policies:
+            </p>
+            <ul class="list-disc pl-6 space-y-1">
+                <li><a href="https://policies.google.com/privacy" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a></li>
+                <li><a href="https://www.facebook.com/privacy/policy/" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">Meta Privacy Policy</a></li>
+                <li><a href="https://openai.com/privacy/" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">OpenAI Privacy Policy</a></li>
+            </ul>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">6. Data Retention</h2>
+            <p>
+                We retain your account data and API credentials for as long as your account is active. If you delete your account, all associated data — including OAuth tokens, campaign data cached locally, and analytics reports — will be permanently removed within 30 days.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">7. Your Rights (LGPD / GDPR)</h2>
+            <p>
+                Under the Brazilian General Data Protection Law (LGPD) and the European General Data Protection Regulation (GDPR), you have the right to:
+            </p>
+            <ul class="list-disc pl-6 space-y-1">
+                <li><strong>Access</strong> — Request a copy of the personal data we hold about you</li>
+                <li><strong>Rectification</strong> — Request correction of inaccurate data</li>
+                <li><strong>Deletion</strong> — Request deletion of your personal data</li>
+                <li><strong>Portability</strong> — Request export of your data in a machine-readable format</li>
+                <li><strong>Revoke Consent</strong> — Withdraw consent for data processing at any time</li>
+            </ul>
+            <p>
+                To exercise any of these rights, please contact us at <a href="mailto:contato@rankpulse.cloud" class="text-primary hover:underline">contato@rankpulse.cloud</a>.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">8. Data Deletion Instructions</h2>
+            <p>
+                To request deletion of all your data from RankPulse:
+            </p>
+            <ol class="list-decimal pl-6 space-y-1">
+                <li>Log in to your RankPulse account</li>
+                <li>Navigate to your account settings</li>
+                <li>Click "Delete Account" and confirm</li>
+            </ol>
+            <p>
+                Alternatively, send an email to <a href="mailto:contato@rankpulse.cloud" class="text-primary hover:underline">contato@rankpulse.cloud</a> with the subject "Data Deletion Request" and we will process your request within 15 business days.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">9. Cookies</h2>
+            <p>
+                We use essential cookies to maintain your session and CSRF protection. We do not use tracking cookies or third-party advertising cookies.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">10. Children's Privacy</h2>
+            <p>
+                Our Service is not intended for individuals under the age of 18. We do not knowingly collect personal data from children.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">11. Changes to This Policy</h2>
+            <p>
+                We may update this Privacy Policy from time to time. Changes will be posted on this page with an updated "Last updated" date. We encourage you to review this page periodically.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900">12. Contact</h2>
+            <p>
+                If you have questions about this Privacy Policy, please contact us:
+            </p>
+            <ul class="list-none space-y-1">
+                <li><strong>Email:</strong> <a href="mailto:contato@rankpulse.cloud" class="text-primary hover:underline">contato@rankpulse.cloud</a></li>
+                <li><strong>Website:</strong> <a href="https://rankpulse.cloud" class="text-primary hover:underline">rankpulse.cloud</a></li>
+                <li><strong>Location:</strong> Rio de Janeiro, RJ — Brazil</li>
+            </ul>
+        </section>
+
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-gray-50 border-t border-gray-100 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+        <p>&copy; {{ year }} RankPulse. All rights reserved.</p>
+        <div class="mt-2 space-x-4">
+            <a href="{% url 'privacy' %}" class="hover:text-primary">Privacy Policy</a>
+            <a href="{% url 'terms' %}" class="hover:text-primary">Terms of Service</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
