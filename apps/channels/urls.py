@@ -34,6 +34,7 @@ urlpatterns = [
     # ── Meta Ads OAuth (channel-scoped) ──────────────────────
     path("<int:channel_id>/oauth/meta/start/", views.meta_oauth_start, name="meta_oauth_start"),
     path("oauth/meta/callback/", views.meta_oauth_callback, name="meta_oauth_callback"),
+    path("<int:channel_id>/oauth/meta/select-account/", views.meta_select_account, name="meta_select_account"),
     path("<int:channel_id>/oauth/meta/test/", views.meta_test_connection, name="meta_test_connection"),
 
     # ── Meta Ads API Proxy (channel-scoped) ──────────────────

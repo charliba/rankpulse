@@ -543,27 +543,62 @@ def meta_oauth_callback(request):
     # Save token to credentials
     cred, _ = ChannelCredential.objects.get_or_create(channel=channel)
     cred.access_token = final_token
-
-    # Auto-fetch ad account ID
-    try:
-        acct_resp = http_requests.get(
-            f"https://graph.facebook.com/{META_GRAPH_VERSION}/me/adaccounts",
-            params={"access_token": final_token, "fields": "id,name", "limit": 1},
-            timeout=15,
-        )
-        acct_data = acct_resp.json()
-        accounts = acct_data.get("data", [])
-        if accounts:
-            cred.account_id = accounts[0]["id"]
-            logger.info("Auto-detected ad account: %s (%s)", accounts[0]["id"], accounts[0].get("name", ""))
-    except Exception:
-        logger.warning("Could not auto-detect ad account ID", exc_info=True)
-
-    cred.save(update_fields=["access_token", "account_id"])
+    cred.save(update_fields=["access_token"])
 
     logger.info("Meta access token saved for channel %s (pk=%d)", channel.name, channel.pk)
-    messages.success(request, "Meta Ads conectado com sucesso! Access Token salvo.")
-    return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    # Redirect to account selection page
+    return redirect("channels:meta_select_account", channel_id=channel.pk)
+
+
+@login_required
+def meta_select_account(request, channel_id: int):
+    """Let user choose which Meta ad account to use."""
+    import requests as http_requests
+
+    channel = _get_user_channel(request, channel_id)
+    cred = ChannelCredential.objects.filter(channel=channel).first()
+
+    if not cred or not cred.access_token:
+        messages.error(request, "Conecte o Meta Ads via OAuth primeiro.")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    if request.method == "POST":
+        account_id = request.POST.get("account_id", "").strip()
+        if account_id:
+            cred.account_id = account_id
+            cred.save(update_fields=["account_id"])
+            messages.success(request, f"Conta de anúncios {account_id} selecionada!")
+        else:
+            messages.error(request, "Selecione uma conta.")
+            return redirect("channels:meta_select_account", channel_id=channel.pk)
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    # GET: fetch all ad accounts
+    accounts = []
+    try:
+        url = f"https://graph.facebook.com/{META_GRAPH_VERSION}/me/adaccounts"
+        params = {"access_token": cred.access_token, "fields": "id,name,account_status", "limit": 50}
+        resp = http_requests.get(url, params=params, timeout=15)
+        data = resp.json()
+        status_map = {1: "ACTIVE", 2: "DISABLED", 3: "UNSETTLED", 7: "PENDING_RISK_REVIEW",
+                      8: "PENDING_SETTLEMENT", 9: "IN_GRACE_PERIOD", 100: "PENDING_CLOSURE", 101: "CLOSED"}
+        for acct in data.get("data", []):
+            accounts.append({
+                "id": acct["id"],
+                "name": acct.get("name", acct["id"]),
+                "status": status_map.get(acct.get("account_status"), str(acct.get("account_status", ""))),
+            })
+    except Exception:
+        logger.warning("Could not fetch Meta ad accounts", exc_info=True)
+        messages.warning(request, "Não foi possível listar as contas. Tente novamente.")
+
+    return render(request, "channels/meta_select_account.html", {
+        "page_title": f"Selecionar Conta — {channel.name}",
+        "channel": channel,
+        "accounts": accounts,
+        "current_account_id": cred.account_id or "",
+    })
 
 
 @login_required

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Selecionar Conta de Anúncios — {{ channel.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-8 px-4">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-400 mb-6 flex items-center gap-2">
+        <a href="{% url 'core:dashboard' %}" class="hover:text-white">Dashboard</a>
+        <span>›</span>
+        <a href="{% url 'channels:channel_credentials' channel_id=channel.pk %}" class="hover:text-white">{{ channel.name }}</a>
+        <span>›</span>
+        <span class="text-gray-300">Selecionar Conta</span>
+    </nav>
+
+    <h1 class="text-2xl font-bold text-white mb-2">Selecionar Conta de Anúncios</h1>
+    <p class="text-gray-400 mb-8">OAuth conectado com sucesso! Escolha qual conta de anúncios deseja usar com este canal.</p>
+
+    {% if accounts %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="space-y-3 mb-8">
+            {% for acct in accounts %}
+            <label class="flex items-center gap-4 p-4 bg-gray-800 rounded-xl border-2 cursor-pointer transition-all
+                          {% if acct.id == current_account_id %}border-indigo-500 bg-gray-750{% else %}border-gray-700 hover:border-gray-500{% endif %}">
+                <input type="radio" name="account_id" value="{{ acct.id }}"
+                       {% if acct.id == current_account_id %}checked{% endif %}
+                       class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                <div class="flex-1 min-w-0">
+                    <p class="text-white font-medium truncate">{{ acct.name }}</p>
+                    <p class="text-gray-400 text-sm font-mono">{{ acct.id }}</p>
+                </div>
+                {% if acct.status %}
+                <span class="text-xs px-2 py-1 rounded-full font-medium
+                    {% if acct.status == 'ACTIVE' %}bg-green-900 text-green-300
+                    {% elif acct.status == 'DISABLED' %}bg-red-900 text-red-300
+                    {% else %}bg-yellow-900 text-yellow-300{% endif %}">
+                    {{ acct.status }}
+                </span>
+                {% endif %}
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button type="submit"
+                    class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg">
+                Confirmar Conta
+            </button>
+            <a href="{% url 'channels:channel_credentials' channel_id=channel.pk %}"
+               class="text-gray-400 hover:text-white transition-colors">
+                Cancelar
+            </a>
+        </div>
+    </form>
+    {% else %}
+    <div class="bg-yellow-900/30 border border-yellow-700 rounded-xl p-6 text-yellow-200">
+        <p class="font-medium mb-2">Nenhuma conta de anúncios encontrada</p>
+        <p class="text-sm text-yellow-300">
+            Sua conta do Facebook não tem contas de anúncios associadas.
+            <a href="https://business.facebook.com/settings/ad-accounts" target="_blank" class="underline">Crie uma no Business Manager</a>.
+        </p>
+    </div>
+    <div class="mt-6">
+        <a href="{% url 'channels:channel_credentials' channel_id=channel.pk %}"
+           class="text-indigo-400 hover:text-indigo-300 transition-colors">
+            ← Voltar às credenciais
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
