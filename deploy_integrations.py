@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import os
 import paramiko
+from dotenv import load_dotenv
 
-VPS_HOST = "31.97.171.87"
-VPS_USER = "root"
-VPS_PASS = "REDACTED"
-REMOTE_BASE = "/root/rankpulse"
+load_dotenv()
+
+VPS_HOST = os.getenv("VPS_HOST")
+VPS_USER = os.getenv("VPS_USER", "root")
+VPS_PASS = os.getenv("VPS_PASSWORD")
+REMOTE_BASE = os.getenv("VPS_PROJECT_PATH", "/root/rankpulse")
 GUNICORN_PID = 377553
 
 LOCAL_BASE = os.path.dirname(os.path.abspath(__file__))

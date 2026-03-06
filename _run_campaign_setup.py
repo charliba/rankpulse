@@ -7,10 +7,13 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-VPS_HOST = "31.97.171.87"
-VPS_USER = "root"
-VPS_PASS = "REDACTED"
-REMOTE_BASE = "/root/rankpulse"
+from dotenv import load_dotenv
+load_dotenv()
+
+VPS_HOST = os.getenv("VPS_HOST")
+VPS_USER = os.getenv("VPS_USER", "root")
+VPS_PASS = os.getenv("VPS_PASSWORD")
+REMOTE_BASE = os.getenv("VPS_PROJECT_PATH", "/root/rankpulse")
 VENV_PY = f"{REMOTE_BASE}/venv/bin/python"
 LOCAL_BASE = os.path.dirname(os.path.abspath(__file__))
 

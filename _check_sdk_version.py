@@ -39,9 +39,16 @@ dv = getattr(c, "_DEFAULT_VERSION", "unknown")
 print("Default version:", dv)
 '''
 
+from dotenv import load_dotenv
+load_dotenv()
+
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-ssh.connect("31.97.171.87", username="root", password="REDACTED")
+ssh.connect(
+    os.getenv("VPS_HOST"),
+    username=os.getenv("VPS_USER", "root"),
+    password=os.getenv("VPS_PASSWORD"),
+)
 
 sftp = ssh.open_sftp()
 sftp.open("/tmp/_check_sdk.py", "w").write(REMOTE_SCRIPT)

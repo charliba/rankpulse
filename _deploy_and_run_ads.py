@@ -5,12 +5,15 @@ import os
 
 warnings.filterwarnings("ignore")
 
-VPS_HOST = "31.97.171.87"
-VPS_USER = "root"
-VPS_PASS = "REDACTED"
-VPS_BASE = "/root/rankpulse"
+from dotenv import load_dotenv
+load_dotenv()
 
-LOCAL_BASE = r"c:\Users\mende\OneDrive\Profissional\python\VPS_Hostinger_31.97.171.87\rankPulse"
+VPS_HOST = os.getenv("VPS_HOST")
+VPS_USER = os.getenv("VPS_USER", "root")
+VPS_PASS = os.getenv("VPS_PASSWORD")
+VPS_BASE = os.getenv("VPS_PROJECT_PATH", "/root/rankpulse")
+
+LOCAL_BASE = os.path.dirname(os.path.abspath(__file__))
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

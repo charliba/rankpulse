@@ -1,12 +1,14 @@
 """Deploy forms.py and ads_client.py fixes to VPS, then reload gunicorn."""
+import os
 import paramiko
 import warnings
-import os
+from dotenv import load_dotenv
 
 warnings.filterwarnings("ignore")
+load_dotenv()
 
-LOCAL_BASE = r"c:\Users\mende\OneDrive\Profissional\python\VPS_Hostinger_31.97.171.87\rankPulse"
-VPS_BASE = "/root/rankpulse"
+LOCAL_BASE = os.path.dirname(os.path.abspath(__file__))
+VPS_BASE = os.getenv("VPS_PROJECT_PATH", "/root/rankpulse")
 
 FILES = [
     ("apps/core/forms.py", "apps/core/forms.py"),
@@ -15,7 +17,11 @@ FILES = [
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-ssh.connect("31.97.171.87", username="root", password="REDACTED")
+ssh.connect(
+    os.getenv("VPS_HOST"),
+    username=os.getenv("VPS_USER", "root"),
+    password=os.getenv("VPS_PASSWORD"),
+)
 sftp = ssh.open_sftp()
 
 for local_rel, remote_rel in FILES:
