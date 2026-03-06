@@ -7,100 +7,129 @@
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p class="text-gray-500 mt-1">Visão geral dos seus {{ total_sites }} site{{ total_sites|pluralize:"s" }}</p>
+            <p class="text-gray-500 mt-1">Visão geral dos seus {{ total_projects }} projeto{{ total_projects|pluralize:"s" }}</p>
         </div>
-        <a href="{% url 'core:site_add' %}"
+        <a href="{% url 'core:project_add' %}"
            class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Adicionar Site
+            Novo Projeto
         </a>
     </div>
 
-    {% if site_data %}
-    <!-- Site Cards -->
-    <div class="space-y-4">
-        {% for item in site_data %}
+    {% if project_data %}
+    <!-- Project Cards -->
+    <div class="space-y-6">
+        {% for item in project_data %}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 card-hover">
-            <div class="p-6">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    <!-- Site info -->
+            <!-- Project Header -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-4 min-w-0">
                         <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                            {{ item.site.name|first|upper }}
+                            {{ item.project.name|first|upper }}
                         </div>
                         <div class="min-w-0">
-                            <h3 class="text-lg font-semibold text-gray-900 truncate">{{ item.site.name }}</h3>
-                            <p class="text-sm text-gray-500 truncate">{{ item.site.domain }}</p>
+                            <h2 class="text-lg font-semibold text-gray-900 truncate">{{ item.project.name }}</h2>
+                            <p class="text-sm text-gray-500">{{ item.total_sites }} site{{ item.total_sites|pluralize:"s" }} · {{ item.total_channels }} canal{{ item.total_channels|pluralize:"is,is" }}</p>
                         </div>
-                        {% if item.site.is_active %}
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full flex-shrink-0">
-                            <span class="pulse-dot"></span> Ativo
-                        </span>
-                        {% else %}
-                        <span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full flex-shrink-0">Inativo</span>
-                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="{% url 'core:project_detail' item.project.pk %}"
+                           class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            Ver Projeto
+                        </a>
+                        <a href="{% url 'core:site_add' item.project.pk %}"
+                           class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Adicionar Site
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sites list -->
+            {% if item.sites %}
+            <div class="divide-y divide-gray-50">
+                {% for sd in item.sites %}
+                <div class="px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <!-- Site info -->
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-2 h-2 rounded-full flex-shrink-0 {% if sd.site.is_active %}bg-green-400{% else %}bg-gray-400{% endif %}"></span>
+                        <div class="min-w-0">
+                            <a href="{% url 'core:site_detail' sd.site.pk %}" class="text-sm font-medium text-gray-900 hover:text-indigo-600 truncate block">{{ sd.site.name }}</a>
+                            <p class="text-xs text-gray-400 truncate">{{ sd.site.domain }}</p>
+                        </div>
                     </div>
 
                     <!-- Metrics -->
-                    <div class="flex flex-wrap items-center gap-6 lg:gap-8">
-                        <!-- Snapshot metrics -->
-                        {% if item.snapshot %}
+                    <div class="flex flex-wrap items-center gap-6">
+                        {% if sd.snapshot %}
                         <div class="text-center">
-                            <p class="text-xs text-gray-400 mb-0.5">Sessões Org.</p>
-                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.organic_sessions|default:"—" }}</p>
+                            <p class="text-[10px] text-gray-400 mb-0.5">Sessões Org.</p>
+                            <p class="text-base font-bold text-gray-900">{{ sd.snapshot.organic_sessions|default:"—" }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-400 mb-0.5">Cliques GSC</p>
-                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.gsc_clicks|default:"—" }}</p>
+                            <p class="text-[10px] text-gray-400 mb-0.5">Cliques GSC</p>
+                            <p class="text-base font-bold text-gray-900">{{ sd.snapshot.gsc_clicks|default:"—" }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-400 mb-0.5">Signups</p>
-                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.signups|default:"0" }}</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-xs text-gray-400 mb-0.5">Top 10</p>
-                            <p class="text-xl font-bold text-gray-900">{{ item.snapshot.keywords_top10|default:"—" }}</p>
+                            <p class="text-[10px] text-gray-400 mb-0.5">Top 10</p>
+                            <p class="text-base font-bold text-gray-900">{{ sd.snapshot.keywords_top10|default:"—" }}</p>
                         </div>
                         {% else %}
-                        <p class="text-sm text-gray-400 italic">Sem dados semanais</p>
+                        <p class="text-xs text-gray-400 italic">Sem dados semanais</p>
                         {% endif %}
 
-                        <!-- Events progress -->
+                        <!-- Events -->
                         <div>
-                            <p class="text-xs text-gray-400 mb-1">Eventos GA4</p>
+                            <p class="text-[10px] text-gray-400 mb-1">Eventos GA4</p>
                             <div class="flex items-center gap-2">
-                                <div class="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div class="h-full bg-green-500 rounded-full progress-fill"
-                                         style="width: {{ item.events_pct|floatformat:0 }}%"></div>
+                                <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-green-500 rounded-full" style="width: {{ sd.events_pct|floatformat:0 }}%"></div>
                                 </div>
-                                <span class="text-xs font-medium text-gray-600">{{ item.events_implemented }}/{{ item.events_total }}</span>
+                                <span class="text-[10px] font-medium text-gray-500">{{ sd.events_implemented }}/{{ sd.events_total }}</span>
                             </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-center gap-2">
+                            <a href="{% url 'core:site_detail' sd.site.pk %}" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Detalhes</a>
+                            <span class="text-gray-300">|</span>
+                            <a href="{% url 'core:weekly_report' sd.site.pk %}" class="text-xs text-gray-500 hover:text-gray-700 font-medium">Relatório</a>
                         </div>
                     </div>
                 </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-6 py-8 text-center">
+                <p class="text-sm text-gray-400">Nenhum site neste projeto.</p>
+                <a href="{% url 'core:site_add' item.project.pk %}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium mt-1 inline-block">Adicionar primeiro site</a>
+            </div>
+            {% endif %}
 
-                <!-- Action buttons -->
-                <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
-                    <a href="{% url 'core:site_detail' item.site.pk %}"
-                       class="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                        </svg>
-                        Detalhes
-                    </a>
-                    <span class="text-gray-300">|</span>
-                    <a href="{% url 'core:weekly_report' item.site.pk %}"
-                       class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        Relatório Semanal
-                    </a>
+            <!-- Channels bar -->
+            {% if item.channels %}
+            <div class="px-6 py-3 bg-gray-50 border-t border-gray-100 rounded-b-xl">
+                <div class="flex items-center gap-3">
+                    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Canais:</span>
+                    {% for ch in item.channels %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium
+                                 {% if ch.platform == 'google_ads' %}bg-blue-100 text-blue-700{% elif ch.platform == 'meta_ads' %}bg-indigo-100 text-indigo-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                        {{ ch.get_platform_display }} {% if ch.is_configured %}✓{% endif %}
+                    </span>
+                    {% endfor %}
                 </div>
             </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -110,17 +139,17 @@
         <div class="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <svg class="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
             </svg>
         </div>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Nenhum site cadastrado</h3>
-        <p class="text-gray-400 mb-6 max-w-sm mx-auto">Adicione seu primeiro site para começar a monitorar tráfego e métricas SEO.</p>
-        <a href="{% url 'core:site_add' %}"
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Nenhum projeto cadastrado</h3>
+        <p class="text-gray-400 mb-6 max-w-sm mx-auto">Crie seu primeiro projeto para começar a gerenciar sites e canais de tráfego.</p>
+        <a href="{% url 'core:project_add' %}"
            class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            Adicionar Site
+            Criar Projeto
         </a>
     </div>
     {% endif %}

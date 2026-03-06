@@ -1,4 +1,7 @@
-"""Analytics URL configuration — GA4, GSC, GA4 Admin, Google Ads endpoints."""
+"""Analytics URL configuration — GA4, GSC, GA4 Admin endpoints.
+
+Google Ads endpoints have been moved to apps.channels.urls.
+"""
 from django.urls import path
 
 from . import views
@@ -38,20 +41,4 @@ urlpatterns = [
     # ── GSC URL Inspection ──────────────────────────────────
     path("<int:site_id>/inspect/", views.gsc_inspect_url, name="inspect_url"),
     path("<int:site_id>/inspect/batch/", views.gsc_batch_inspect, name="inspect_batch"),
-
-    # ── Google Ads (account-level, no site_id) ──────────────
-    path("ads/account/", views.ads_account_info, name="ads_account"),
-    path("ads/campaigns/", views.ads_campaigns, name="ads_campaigns"),
-    path("ads/campaigns/create/", views.ads_create_campaign, name="ads_create_campaign"),
-    path("ads/campaigns/status/", views.ads_update_campaign_status, name="ads_update_status"),
-    path("ads/campaigns/budget/", views.ads_update_budget, name="ads_update_budget"),
-    path("ads/campaigns/<str:campaign_id>/ad-groups/", views.ads_ad_groups, name="ads_ad_groups"),
-    path("ads/campaigns/<str:campaign_id>/ad-groups/create/", views.ads_create_ad_group, name="ads_create_ad_group"),
-    path("ads/ad-groups/<str:ad_group_id>/keywords/", views.ads_add_keywords, name="ads_add_keywords"),
-    path("ads/ad-groups/<str:ad_group_id>/rsa/", views.ads_create_rsa, name="ads_create_rsa"),
-    path("ads/conversions/", views.ads_conversions, name="ads_conversions"),
-    path("ads/conversions/create/", views.ads_create_conversion, name="ads_create_conversion"),
-    path("ads/performance/", views.ads_campaign_performance, name="ads_performance"),
-    path("ads/keyword-performance/", views.ads_keyword_performance, name="ads_keyword_performance"),
-    path("ads/setup-beezle/", views.ads_setup_beezle, name="ads_setup_beezle"),
 ]

@@ -1,7 +1,30 @@
-"""Core admin — Site and KPI management."""
+"""Core admin — Project, Site, and KPI management."""
 from django.contrib import admin
 
-from .models import GA4EventDefinition, KPIGoal, Site, WeeklySnapshot
+from .models import GA4EventDefinition, KPIGoal, Project, Site, WeeklySnapshot
+
+
+class SiteInline(admin.TabularInline):
+    """Inline for sites inside a project."""
+
+    model = Site
+    extra = 0
+    fields = ["name", "domain", "url", "is_active"]
+    show_change_link = True
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    """Admin for projects."""
+
+    list_display = ["name", "owner", "slug", "is_active", "created_at"]
+    list_filter = ["is_active", "owner"]
+    search_fields = ["name", "owner__username"]
+    prepopulated_fields = {"slug": ("name",)}
+    inlines = [SiteInline]
+    fieldsets = [
+        (None, {"fields": ["owner", "name", "slug", "description", "is_active"]}),
+    ]
 
 
 class GA4EventDefinitionInline(admin.TabularInline):
@@ -27,12 +50,12 @@ class KPIGoalInline(admin.TabularInline):
 class SiteAdmin(admin.ModelAdmin):
     """Admin for managed sites."""
 
-    list_display = ["name", "domain", "ga4_measurement_id", "gsc_verified", "is_active"]
-    list_filter = ["is_active", "gsc_verified"]
-    search_fields = ["name", "domain"]
+    list_display = ["name", "project", "domain", "ga4_measurement_id", "gsc_verified", "is_active"]
+    list_filter = ["is_active", "gsc_verified", "project"]
+    search_fields = ["name", "domain", "project__name"]
     inlines = [GA4EventDefinitionInline, KPIGoalInline]
     fieldsets = [
-        ("Geral", {"fields": ["name", "domain", "url", "description", "is_active"]}),
+        ("Geral", {"fields": ["project", "name", "domain", "url", "description", "is_active"]}),
         ("Google Analytics 4", {
             "fields": ["ga4_measurement_id", "ga4_api_secret", "ga4_property_id"],
         }),

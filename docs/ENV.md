@@ -9,8 +9,8 @@
 ## 📍 Localização do `.env`
 
 ```
-trafic_provider/.env          ← Arquivo principal (NÃO versionado)
-trafic_provider/.env.example  ← Template de referência (versionado)
+rankPulse/.env          ← Arquivo principal (NÃO versionado)
+rankPulse/.env.example  ← Template de referência (versionado)
 ```
 
 **No servidor VPS:**

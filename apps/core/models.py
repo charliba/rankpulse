@@ -1,21 +1,51 @@
-"""Core models — Sites managed by the traffic system."""
+"""Core models — Projects and Sites managed by the traffic platform."""
 from __future__ import annotations
 
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 
 
-class Site(models.Model):
-    """A website managed by Trafic Provider."""
+class Project(models.Model):
+    """A project/business managed in RankPulse (e.g. 'My Face', 'Beezle')."""
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="sites",
+        related_name="projects",
         verbose_name="Proprietário",
-        null=True,
-        blank=True,
+    )
+    name = models.CharField(max_length=200, verbose_name="Nome do Projeto")
+    slug = models.SlugField(max_length=220, verbose_name="Slug")
+    description = models.TextField(blank=True, verbose_name="Descrição")
+    is_active = models.BooleanField(default=True, verbose_name="Ativo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Projeto"
+        verbose_name_plural = "Projetos"
+        unique_together = ["owner", "slug"]
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+
+class Site(models.Model):
+    """A website inside a project — holds analytics integrations (GA4, GSC)."""
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="sites",
+        verbose_name="Projeto",
     )
     name = models.CharField(max_length=200, verbose_name="Nome do Site")
     domain = models.CharField(max_length=253, unique=True, verbose_name="Domínio")
@@ -40,33 +70,7 @@ class Site(models.Model):
     gsc_verified = models.BooleanField(default=False, verbose_name="GSC Verificado")
     gsc_site_url = models.URLField(blank=True, verbose_name="GSC Site URL")
 
-    # Google Ads
-    google_ads_customer_id = models.CharField(
-        max_length=30, blank=True, verbose_name="Google Ads Customer ID",
-        help_text="Formato: 123-456-7890 (encontre em ads.google.com no canto superior direito)",
-    )
-    google_ads_developer_token = models.CharField(
-        max_length=100, blank=True, verbose_name="Developer Token",
-        help_text="Token obtido no MCC → Ferramentas → Centro de API",
-    )
-    google_ads_client_id = models.CharField(
-        max_length=200, blank=True, verbose_name="OAuth Client ID",
-        help_text="ID do cliente OAuth2 do Google Cloud Console",
-    )
-    google_ads_client_secret = models.CharField(
-        max_length=200, blank=True, verbose_name="OAuth Client Secret",
-        help_text="Secret do cliente OAuth2 do Google Cloud Console",
-    )
-    google_ads_refresh_token = models.CharField(
-        max_length=500, blank=True, verbose_name="OAuth Refresh Token",
-        help_text="Token de atualização gerado via fluxo de consentimento OAuth2",
-    )
-    google_ads_login_customer_id = models.CharField(
-        max_length=30, blank=True, verbose_name="Login Customer ID (MCC)",
-        help_text="Opcional — ID da conta MCC gerenciadora, se aplicável",
-    )
-
-    # Service Account Keys (file paths on server)
+    # Service Account Keys
     gsc_service_account_key = models.TextField(
         blank=True, verbose_name="GSC Service Account JSON",
         help_text="Conteúdo completo do JSON da Service Account do Google Search Console",
@@ -92,17 +96,6 @@ class Site(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.domain})"
-
-    @property
-    def google_ads_configured(self) -> bool:
-        """Check if all required Google Ads credentials are set."""
-        return bool(
-            self.google_ads_customer_id
-            and self.google_ads_developer_token
-            and self.google_ads_client_id
-            and self.google_ads_client_secret
-            and self.google_ads_refresh_token
-        )
 
 
 class GA4EventDefinition(models.Model):

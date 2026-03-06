@@ -1,9 +1,8 @@
-"""Core views — Dashboard, Site CRUD, reports, and OAuth flows."""
+"""Core views — Dashboard, Project/Site CRUD, reports, and integrations."""
 from __future__ import annotations
 
 import json
 import logging
-import urllib.parse
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -15,35 +14,112 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import GA4EventForm, IntegrationsForm, KPIGoalForm, SiteForm
-from .models import GA4EventDefinition, KPIGoal, Site, WeeklySnapshot
+from .forms import GA4EventForm, IntegrationsForm, KPIGoalForm, ProjectForm, SiteForm
+from .models import GA4EventDefinition, KPIGoal, Project, Site, WeeklySnapshot
 
 logger = logging.getLogger(__name__)
 
 
 def _base_context(request) -> dict:
-    """Common context for all views — user's sites list for sidebar."""
-    return {"sites": Site.objects.filter(owner=request.user, is_active=True)}
+    """Common context for all views — user's projects for sidebar."""
+    projects = Project.objects.filter(owner=request.user, is_active=True).prefetch_related("sites")
+    return {"projects": projects}
+
+
+def _get_user_project(request, project_id: int) -> Project:
+    """Get a project that belongs to the current user."""
+    return get_object_or_404(Project, pk=project_id, owner=request.user)
 
 
 def _get_user_site(request, site_id: int) -> Site:
-    """Get a site that belongs to the current user."""
-    return get_object_or_404(Site, pk=site_id, owner=request.user)
+    """Get a site whose project belongs to the current user."""
+    return get_object_or_404(
+        Site.objects.select_related("project"),
+        pk=site_id,
+        project__owner=request.user,
+    )
 
 
 # ── Dashboard ──────────────────────────────────────────
 
 @login_required
 def dashboard(request):
-    """Main dashboard showing user's sites overview."""
-    sites = Site.objects.filter(owner=request.user, is_active=True)
-    site_data = []
+    """Main dashboard showing user's projects overview."""
+    projects = Project.objects.filter(owner=request.user, is_active=True).prefetch_related(
+        "sites", "channels",
+    )
 
+    project_data = []
+    for project in projects:
+        sites = project.sites.filter(is_active=True)
+        channels = project.channels.filter(is_active=True)
+
+        site_data = []
+        for site in sites:
+            latest_snapshot = site.weekly_snapshots.first()
+            events_total = site.event_definitions.count()
+            events_implemented = site.event_definitions.filter(is_implemented=True).count()
+            site_data.append({
+                "site": site,
+                "snapshot": latest_snapshot,
+                "events_total": events_total,
+                "events_implemented": events_implemented,
+                "events_pct": (events_implemented / events_total * 100) if events_total else 0,
+            })
+
+        project_data.append({
+            "project": project,
+            "sites": site_data,
+            "channels": channels,
+            "total_sites": sites.count(),
+            "total_channels": channels.count(),
+        })
+
+    context = {
+        **_base_context(request),
+        "page_title": "Dashboard",
+        "project_data": project_data,
+        "total_projects": projects.count(),
+    }
+    return render(request, "core/dashboard.html", context)
+
+
+# ── Project CRUD ───────────────────────────────────────
+
+@login_required
+def project_add(request):
+    """Create a new project."""
+    if request.method == "POST":
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.owner = request.user
+            project.save()
+            messages.success(request, f"Projeto '{project.name}' criado com sucesso!")
+            return redirect("core:project_detail", project_id=project.pk)
+    else:
+        form = ProjectForm()
+
+    context = {
+        **_base_context(request),
+        "page_title": "Novo Projeto",
+        "form": form,
+    }
+    return render(request, "core/project_form.html", context)
+
+
+@login_required
+def project_detail(request, project_id: int):
+    """Detailed view of a project — its sites and channels."""
+    project = _get_user_project(request, project_id)
+    sites = project.sites.filter(is_active=True)
+    channels = project.channels.filter(is_active=True)
+
+    site_data = []
     for site in sites:
         latest_snapshot = site.weekly_snapshots.first()
         events_total = site.event_definitions.count()
         events_implemented = site.event_definitions.filter(is_implemented=True).count()
-
         site_data.append({
             "site": site,
             "snapshot": latest_snapshot,
@@ -54,23 +130,61 @@ def dashboard(request):
 
     context = {
         **_base_context(request),
-        "page_title": "Dashboard",
+        "page_title": project.name,
+        "project": project,
         "site_data": site_data,
-        "total_sites": sites.count(),
+        "channels": channels,
     }
-    return render(request, "core/dashboard.html", context)
+    return render(request, "core/project_detail.html", context)
+
+
+@login_required
+def project_edit(request, project_id: int):
+    """Edit an existing project."""
+    project = _get_user_project(request, project_id)
+    if request.method == "POST":
+        form = ProjectForm(request.POST, instance=project)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Projeto '{project.name}' atualizado!")
+            return redirect("core:project_detail", project_id=project.pk)
+    else:
+        form = ProjectForm(instance=project)
+
+    context = {
+        **_base_context(request),
+        "page_title": f"Editar {project.name}",
+        "form": form,
+        "project": project,
+        "editing": True,
+    }
+    return render(request, "core/project_form.html", context)
+
+
+@login_required
+def project_delete(request, project_id: int):
+    """Delete a project (POST only)."""
+    project = _get_user_project(request, project_id)
+    if request.method == "POST":
+        name = project.name
+        project.delete()
+        messages.success(request, f"Projeto '{name}' removido.")
+        return redirect("core:dashboard")
+    return redirect("core:project_detail", project_id=project.pk)
 
 
 # ── Site CRUD ──────────────────────────────────────────
 
 @login_required
-def site_add(request):
-    """Create a new site."""
+def site_add(request, project_id: int):
+    """Create a new site inside a project."""
+    project = _get_user_project(request, project_id)
+
     if request.method == "POST":
         form = SiteForm(request.POST)
         if form.is_valid():
             site = form.save(commit=False)
-            site.owner = request.user
+            site.project = project
             site.save()
             messages.success(request, f"Site '{site.name}' criado com sucesso!")
             return redirect("core:site_detail", site_id=site.pk)
@@ -81,6 +195,7 @@ def site_add(request):
         **_base_context(request),
         "page_title": "Adicionar Site",
         "form": form,
+        "project": project,
     }
     return render(request, "core/site_form.html", context)
 
@@ -103,6 +218,7 @@ def site_edit(request, site_id: int):
         "page_title": f"Editar {site.name}",
         "form": form,
         "site": site,
+        "project": site.project,
         "editing": True,
     }
     return render(request, "core/site_form.html", context)
@@ -112,11 +228,12 @@ def site_edit(request, site_id: int):
 def site_delete(request, site_id: int):
     """Delete a site (POST only)."""
     site = _get_user_site(request, site_id)
+    project_id = site.project_id
     if request.method == "POST":
         name = site.name
         site.delete()
         messages.success(request, f"Site '{name}' removido.")
-        return redirect("core:dashboard")
+        return redirect("core:project_detail", project_id=project_id)
     return redirect("core:site_detail", site_id=site.pk)
 
 
@@ -144,6 +261,7 @@ def site_detail(request, site_id: int):
         **_base_context(request),
         "page_title": site.name,
         "site": site,
+        "project": site.project,
         "snapshots": snapshots,
         "events_pending": events_pending,
         "events_done": events_done,
@@ -374,7 +492,7 @@ def register(request):
 
 @login_required
 def site_integrations(request, site_id: int):
-    """Integrations settings page — Google Ads, GA4, GSC credentials."""
+    """Integrations settings page — GA4, GSC credentials."""
     site = _get_user_site(request, site_id)
 
     if request.method == "POST":
@@ -386,7 +504,6 @@ def site_integrations(request, site_id: int):
     else:
         form = IntegrationsForm(instance=site)
 
-    # Status checks
     integrations_status = {
         "ga4": bool(site.ga4_measurement_id),
         "ga4_api": bool(site.ga4_api_secret),
@@ -394,182 +511,14 @@ def site_integrations(request, site_id: int):
         "ga4_service_account": bool(site.ga4_service_account_key),
         "gsc": site.gsc_verified,
         "gsc_service_account": bool(site.gsc_service_account_key),
-        "google_ads": site.google_ads_configured,
     }
 
     context = {
         **_base_context(request),
         "page_title": "Integrações",
         "site": site,
+        "project": site.project,
         "form": form,
         "status": integrations_status,
     }
     return render(request, "core/site_integrations.html", context)
-
-
-# ── Google Ads OAuth Flow ─────────────────────────────
-
-GOOGLE_ADS_SCOPES = ["https://www.googleapis.com/auth/adwords"]
-GOOGLE_AUTH_URI = "https://accounts.google.com/o/oauth2/auth"
-GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token"
-
-
-@login_required
-def google_ads_oauth_start(request, site_id: int):
-    """Generate the Google OAuth2 authorization URL.
-
-    Returns JSON with the auth URL. The user opens this in a new tab,
-    authorizes, and Google shows an authorization code to copy back.
-    """
-    site = _get_user_site(request, site_id)
-
-    client_id = site.google_ads_client_id
-    if not client_id:
-        return JsonResponse(
-            {"error": "Preencha o OAuth Client ID antes de gerar o token."},
-            status=400,
-        )
-
-    # Use OOB redirect for Desktop app OAuth clients
-    redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
-
-    params = {
-        "client_id": client_id,
-        "redirect_uri": redirect_uri,
-        "scope": " ".join(GOOGLE_ADS_SCOPES),
-        "response_type": "code",
-        "access_type": "offline",
-        "prompt": "consent",
-    }
-
-    auth_url = f"{GOOGLE_AUTH_URI}?{urllib.parse.urlencode(params)}"
-    return JsonResponse({"auth_url": auth_url})
-
-
-@login_required
-@require_POST
-def google_ads_oauth_exchange(request, site_id: int):
-    """Exchange an authorization code for refresh + access tokens.
-
-    Saves the refresh token directly to the Site model.
-    """
-    site = _get_user_site(request, site_id)
-
-    auth_code = request.POST.get("auth_code", "").strip()
-    if not auth_code:
-        return JsonResponse(
-            {"error": "Informe o codigo de autorizacao."},
-            status=400,
-        )
-
-    client_id = site.google_ads_client_id
-    client_secret = site.google_ads_client_secret
-    if not client_id or not client_secret:
-        return JsonResponse(
-            {"error": "Preencha Client ID e Client Secret antes."},
-            status=400,
-        )
-
-    # Exchange authorization code for tokens
-    import requests as http_requests
-
-    try:
-        resp = http_requests.post(
-            GOOGLE_TOKEN_URI,
-            data={
-                "code": auth_code,
-                "client_id": client_id,
-                "client_secret": client_secret,
-                "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-                "grant_type": "authorization_code",
-            },
-            timeout=30,
-        )
-        token_data = resp.json()
-    except Exception as exc:
-        logger.exception("OAuth token exchange failed")
-        return JsonResponse(
-            {"error": f"Erro ao contatar o Google: {exc}"},
-            status=502,
-        )
-
-    if "error" in token_data:
-        error_desc = token_data.get("error_description", token_data["error"])
-        return JsonResponse({"error": f"Google retornou erro: {error_desc}"}, status=400)
-
-    refresh_token = token_data.get("refresh_token", "")
-    if not refresh_token:
-        return JsonResponse(
-            {"error": "Google nao retornou refresh_token. Tente novamente com prompt=consent."},
-            status=400,
-        )
-
-    # Save to database
-    site.google_ads_refresh_token = refresh_token
-    site.save(update_fields=["google_ads_refresh_token"])
-
-    logger.info("Google Ads refresh token saved for site %s (pk=%d)", site.name, site.pk)
-
-    return JsonResponse({
-        "success": True,
-        "message": f"Refresh Token salvo com sucesso! ({len(refresh_token)} caracteres)",
-        "token_preview": f"{refresh_token[:15]}...{refresh_token[-8:]}",
-    })
-
-
-@login_required
-@require_POST
-def google_ads_test_connection(request, site_id: int):
-    """Test the Google Ads API connection with current credentials.
-
-    Returns JSON indicating success or a detailed error message.
-    """
-    site = _get_user_site(request, site_id)
-
-    if not site.google_ads_configured:
-        return JsonResponse(
-            {"error": "Preencha todas as credenciais do Google Ads primeiro."},
-            status=400,
-        )
-
-    # Test the refresh token by exchanging it for an access token
-    import requests as http_requests
-
-    try:
-        resp = http_requests.post(
-            GOOGLE_TOKEN_URI,
-            data={
-                "client_id": site.google_ads_client_id,
-                "client_secret": site.google_ads_client_secret,
-                "refresh_token": site.google_ads_refresh_token,
-                "grant_type": "refresh_token",
-            },
-            timeout=15,
-        )
-        data = resp.json()
-    except Exception as exc:
-        return JsonResponse({"error": f"Erro de conexao: {exc}"}, status=502)
-
-    if "error" in data:
-        error_map = {
-            "invalid_grant": (
-                "Token invalido ou expirado. Gere um novo Refresh Token "
-                "usando o botao 'Gerar Refresh Token' acima."
-            ),
-            "invalid_client": (
-                "Client ID ou Client Secret incorretos. Verifique as "
-                "credenciais no Google Cloud Console."
-            ),
-            "unauthorized_client": (
-                "Este cliente OAuth nao esta autorizado. Verifique se a "
-                "Google Ads API esta ativada no projeto Google Cloud."
-            ),
-        }
-        error_code = data.get("error", "")
-        friendly_msg = error_map.get(error_code, data.get("error_description", error_code))
-        return JsonResponse({"error": friendly_msg, "error_code": error_code}, status=400)
-
-    return JsonResponse({
-        "success": True,
-        "message": "Conexao com Google Ads API OK! Access token obtido com sucesso.",
-    })

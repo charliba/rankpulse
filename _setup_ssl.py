@@ -4,7 +4,7 @@ Generate SSL certificate for rankpulse.cloud via certbot.
 Mesma estrutura do _setup_ssl.py do Beezle.
 
 Uso:
-    cd trafic_provider
+    cd rankPulse
     python _setup_ssl.py
 """
 import os

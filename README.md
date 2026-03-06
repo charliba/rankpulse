@@ -24,7 +24,7 @@ Gerencia SEO, Google Analytics 4, Search Console, geração de conteúdo via IA 
 ## 🏗️ Arquitetura
 
 ```
-trafic_provider/
+rankPulse/
 ├── config/                 ← Django settings, URLs, WSGI
 ├── apps/
 │   ├── core/               ← Sites, GA4 events, KPIs, snapshots

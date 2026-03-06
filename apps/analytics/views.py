@@ -1,4 +1,4 @@
-"""Analytics views — API endpoints for GA4, GSC, GA4 Admin, and Google Ads."""
+﻿"""Analytics views â€” API endpoints for GA4, GSC, GA4 Admin, and Google Ads."""
 from __future__ import annotations
 
 import json
@@ -17,7 +17,7 @@ from .models import GA4EventLog
 logger = logging.getLogger(__name__)
 
 
-# ── Helpers ─────────────────────────────────────────────────────
+# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _get_site(site_id: int) -> Site | None:
     """Get an active site or None."""
@@ -54,21 +54,7 @@ def _get_ga4_report_client(site: Site):
     return GA4ReportClient(property_id=property_id, service_account_key_path=key_path)
 
 
-def _get_ads_manager(site: Site | None = None):
-    """Build a GoogleAdsManager — reads from Site model first, falls back to settings/.env."""
-    from .ads_client import GoogleAdsManager
-
-    return GoogleAdsManager(
-        customer_id=(site.google_ads_customer_id if site and site.google_ads_customer_id else getattr(settings, "GOOGLE_ADS_CUSTOMER_ID", "")),
-        developer_token=(site.google_ads_developer_token if site and site.google_ads_developer_token else getattr(settings, "GOOGLE_ADS_DEVELOPER_TOKEN", "")),
-        client_id=(site.google_ads_client_id if site and site.google_ads_client_id else getattr(settings, "GOOGLE_ADS_CLIENT_ID", "")),
-        client_secret=(site.google_ads_client_secret if site and site.google_ads_client_secret else getattr(settings, "GOOGLE_ADS_CLIENT_SECRET", "")),
-        refresh_token=(site.google_ads_refresh_token if site and site.google_ads_refresh_token else getattr(settings, "GOOGLE_ADS_REFRESH_TOKEN", "")),
-        login_customer_id=(site.google_ads_login_customer_id if site and site.google_ads_login_customer_id else getattr(settings, "GOOGLE_ADS_LOGIN_CUSTOMER_ID", "")),
-    )
-
-
-# ── GA4 Measurement Protocol ───────────────────────────────────
+# â”€â”€ GA4 Measurement Protocol â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @require_POST
 def send_event(request, site_id: int) -> JsonResponse:
@@ -190,7 +176,7 @@ def gsc_summary(request, site_id: int) -> JsonResponse:
     })
 
 
-# ── GA4 Data API (Reporting) ───────────────────────────────────
+# â”€â”€ GA4 Data API (Reporting) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @require_GET
 def ga4_organic_traffic(request, site_id: int) -> JsonResponse:
@@ -257,7 +243,7 @@ def ga4_traffic_sources(request, site_id: int) -> JsonResponse:
     return JsonResponse({"success": True, "data": data, "count": len(data)})
 
 
-# ── GA4 Admin API (Key Events) ─────────────────────────────────
+# â”€â”€ GA4 Admin API (Key Events) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @require_GET
 def ga4_key_events(request, site_id: int) -> JsonResponse:
@@ -334,7 +320,7 @@ def ga4_mark_beezle_events(request, site_id: int) -> JsonResponse:
     return JsonResponse({"results": results, "count": len(results)})
 
 
-# ── GSC Sitemap Management ─────────────────────────────────────
+# â”€â”€ GSC Sitemap Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @require_GET
 def gsc_sitemaps(request, site_id: int) -> JsonResponse:
@@ -395,7 +381,7 @@ def gsc_delete_sitemap(request, site_id: int) -> JsonResponse:
     return JsonResponse(result)
 
 
-# ── GSC URL Indexing ────────────────────────────────────────────
+# â”€â”€ GSC URL Indexing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @require_POST
 def gsc_submit_url(request, site_id: int) -> JsonResponse:
@@ -463,7 +449,7 @@ def gsc_remove_url(request, site_id: int) -> JsonResponse:
     return JsonResponse(result)
 
 
-# ── GSC URL Inspection ──────────────────────────────────────────
+# â”€â”€ GSC URL Inspection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @require_POST
 def gsc_inspect_url(request, site_id: int) -> JsonResponse:
@@ -508,205 +494,3 @@ def gsc_batch_inspect(request, site_id: int) -> JsonResponse:
     results = client.batch_inspect_urls(urls)
     return JsonResponse({"results": results, "count": len(results)})
 
-
-# ── Google Ads ──────────────────────────────────────────────────
-
-@require_GET
-def ads_account_info(request) -> JsonResponse:
-    """Get Google Ads account info.
-
-    GET /api/analytics/ads/account/
-    """
-    mgr = _get_ads_manager()
-    result = mgr.get_account_info()
-    return JsonResponse(result)
-
-
-@require_GET
-def ads_campaigns(request) -> JsonResponse:
-    """List all Google Ads campaigns.
-
-    GET /api/analytics/ads/campaigns/
-    """
-    mgr = _get_ads_manager()
-    result = mgr.list_campaigns()
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_create_campaign(request) -> JsonResponse:
-    """Create a new Google Ads campaign.
-
-    POST /api/analytics/ads/campaigns/create/
-    Body: {"name": "...", "daily_budget_brl": 50.0, "bidding_strategy": "MAXIMIZE_CONVERSIONS"}
-    """
-    body = json.loads(request.body)
-    mgr = _get_ads_manager()
-    result = mgr.create_campaign(
-        name=body.get("name", ""),
-        daily_budget_brl=float(body.get("daily_budget_brl", 50.0)),
-        bidding_strategy=body.get("bidding_strategy", "MAXIMIZE_CONVERSIONS"),
-    )
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_update_campaign_status(request) -> JsonResponse:
-    """Update campaign status (ENABLED/PAUSED/REMOVED).
-
-    POST /api/analytics/ads/campaigns/status/
-    Body: {"campaign_id": "123", "status": "ENABLED"}
-    """
-    body = json.loads(request.body)
-    mgr = _get_ads_manager()
-    result = mgr.update_campaign_status(
-        campaign_id=body.get("campaign_id", ""),
-        status=body.get("status", "ENABLED"),
-    )
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_update_budget(request) -> JsonResponse:
-    """Update campaign daily budget.
-
-    POST /api/analytics/ads/campaigns/budget/
-    Body: {"campaign_id": "123", "daily_budget_brl": 75.0}
-    """
-    body = json.loads(request.body)
-    mgr = _get_ads_manager()
-    result = mgr.update_campaign_budget_amount(
-        campaign_id=body.get("campaign_id", ""),
-        new_daily_budget_brl=float(body.get("daily_budget_brl", 50.0)),
-    )
-    return JsonResponse(result)
-
-
-@require_GET
-def ads_ad_groups(request, campaign_id: str) -> JsonResponse:
-    """List ad groups for a campaign.
-
-    GET /api/analytics/ads/campaigns/<campaign_id>/ad-groups/
-    """
-    mgr = _get_ads_manager()
-    result = mgr.list_ad_groups(campaign_id)
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_create_ad_group(request, campaign_id: str) -> JsonResponse:
-    """Create ad group in a campaign.
-
-    POST /api/analytics/ads/campaigns/<campaign_id>/ad-groups/create/
-    Body: {"name": "...", "cpc_bid_brl": 2.0}
-    """
-    body = json.loads(request.body)
-    mgr = _get_ads_manager()
-    result = mgr.create_ad_group(
-        campaign_id=campaign_id,
-        name=body.get("name", ""),
-        cpc_bid_brl=float(body.get("cpc_bid_brl", 2.0)),
-    )
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_add_keywords(request, ad_group_id: str) -> JsonResponse:
-    """Add keywords to an ad group.
-
-    POST /api/analytics/ads/ad-groups/<ad_group_id>/keywords/
-    Body: {"keywords": [{"text": "...", "match_type": "PHRASE"}, ...]}
-    """
-    body = json.loads(request.body)
-    mgr = _get_ads_manager()
-    result = mgr.add_keywords(
-        ad_group_id=ad_group_id,
-        keywords=body.get("keywords", []),
-    )
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_create_rsa(request, ad_group_id: str) -> JsonResponse:
-    """Create a Responsive Search Ad.
-
-    POST /api/analytics/ads/ad-groups/<ad_group_id>/rsa/
-    Body: {"headlines": [...], "descriptions": [...], "final_url": "..."}
-    """
-    body = json.loads(request.body)
-    mgr = _get_ads_manager()
-    result = mgr.create_responsive_search_ad(
-        ad_group_id=ad_group_id,
-        headlines=body.get("headlines", []),
-        descriptions=body.get("descriptions", []),
-        final_url=body.get("final_url", ""),
-        path1=body.get("path1", ""),
-        path2=body.get("path2", ""),
-    )
-    return JsonResponse(result)
-
-
-@require_GET
-def ads_conversions(request) -> JsonResponse:
-    """List Google Ads conversion actions.
-
-    GET /api/analytics/ads/conversions/
-    """
-    mgr = _get_ads_manager()
-    result = mgr.list_conversion_actions()
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_create_conversion(request) -> JsonResponse:
-    """Create a conversion action.
-
-    POST /api/analytics/ads/conversions/create/
-    Body: {"name": "Purchase", "category": "PURCHASE"}
-    """
-    body = json.loads(request.body)
-    mgr = _get_ads_manager()
-    result = mgr.create_conversion_action(
-        name=body.get("name", ""),
-        category=body.get("category", "PURCHASE"),
-        value_settings=body.get("value_settings"),
-    )
-    return JsonResponse(result)
-
-
-@require_GET
-def ads_campaign_performance(request) -> JsonResponse:
-    """Get campaign performance report.
-
-    GET /api/analytics/ads/performance/?campaign_id=123&days=30
-    """
-    campaign_id = request.GET.get("campaign_id")
-    days = int(request.GET.get("days", 30))
-    mgr = _get_ads_manager()
-    result = mgr.get_campaign_performance(campaign_id=campaign_id, days=days)
-    return JsonResponse(result)
-
-
-@require_GET
-def ads_keyword_performance(request) -> JsonResponse:
-    """Get keyword-level performance.
-
-    GET /api/analytics/ads/keyword-performance/?campaign_id=123&days=30
-    """
-    campaign_id = request.GET.get("campaign_id")
-    days = int(request.GET.get("days", 30))
-    mgr = _get_ads_manager()
-    result = mgr.get_keyword_performance(campaign_id=campaign_id, days=days)
-    return JsonResponse(result)
-
-
-@require_POST
-def ads_setup_beezle(request) -> JsonResponse:
-    """Run full Beezle campaign setup.
-
-    POST /api/analytics/ads/setup-beezle/
-    Creates campaign + 3 ad groups + keywords + RSAs + conversions.
-    """
-    mgr = _get_ads_manager()
-    result = mgr.setup_beezle_campaign()
-    return JsonResponse(result)

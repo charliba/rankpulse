@@ -1,13 +1,32 @@
-"""Core forms — Site, Event, KPI and Integrations management."""
+"""Core forms — Project, Site, Event, KPI and Integrations management."""
 from __future__ import annotations
 
 from django import forms
 
-from .models import GA4EventDefinition, KPIGoal, Site
+from .models import GA4EventDefinition, KPIGoal, Project, Site
 
 _INPUT = "w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
 _TEXTAREA = f"{_INPUT} resize-none font-mono"
 _CHECK = "rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-5 w-5"
+
+
+class ProjectForm(forms.ModelForm):
+    """Form for creating/editing a Project."""
+
+    class Meta:
+        model = Project
+        fields = ["name", "description"]
+        widgets = {
+            "name": forms.TextInput(attrs={
+                "class": _INPUT,
+                "placeholder": "Ex: My Face, Beezle",
+            }),
+            "description": forms.Textarea(attrs={
+                "class": f"{_INPUT} resize-none",
+                "rows": 3,
+                "placeholder": "Descrição do projeto (opcional)",
+            }),
+        }
 
 
 class SiteForm(forms.ModelForm):
@@ -166,10 +185,10 @@ class KPIGoalForm(forms.ModelForm):
 
 
 class IntegrationsForm(forms.ModelForm):
-    """Form for configuring Google Ads, GA4 and GSC per-site credentials."""
+    """Form for configuring GA4 and GSC per-site credentials.
 
-    # Password fields that must preserve existing values when left blank.
-    _SECRET_FIELDS = ("google_ads_client_secret", "google_ads_refresh_token")
+    Google Ads credentials are now managed via Channels.
+    """
 
     class Meta:
         model = Site
@@ -181,13 +200,6 @@ class IntegrationsForm(forms.ModelForm):
             # GSC
             "gsc_site_url",
             "gsc_verified",
-            # Google Ads
-            "google_ads_customer_id",
-            "google_ads_developer_token",
-            "google_ads_client_id",
-            "google_ads_client_secret",
-            "google_ads_refresh_token",
-            "google_ads_login_customer_id",
             # Service Account Keys
             "gsc_service_account_key",
             "ga4_service_account_key",
@@ -206,26 +218,6 @@ class IntegrationsForm(forms.ModelForm):
                 "class": _INPUT, "placeholder": "https://seusite.com.br",
             }),
             "gsc_verified": forms.CheckboxInput(attrs={"class": _CHECK}),
-            "google_ads_customer_id": forms.TextInput(attrs={
-                "class": _INPUT, "placeholder": "123-456-7890",
-            }),
-            "google_ads_developer_token": forms.TextInput(attrs={
-                "class": _INPUT, "placeholder": "Token da API do Google Ads",
-            }),
-            "google_ads_client_id": forms.TextInput(attrs={
-                "class": _INPUT, "placeholder": "xxxx.apps.googleusercontent.com",
-            }),
-            "google_ads_client_secret": forms.PasswordInput(attrs={
-                "class": _INPUT, "placeholder": "Manter atual (deixe vazio)",
-                "autocomplete": "new-password",
-            }),
-            "google_ads_refresh_token": forms.PasswordInput(attrs={
-                "class": _INPUT, "placeholder": "Manter atual (deixe vazio)",
-                "autocomplete": "new-password",
-            }),
-            "google_ads_login_customer_id": forms.TextInput(attrs={
-                "class": _INPUT, "placeholder": "Opcional — ID da conta MCC",
-            }),
             "gsc_service_account_key": forms.Textarea(attrs={
                 "class": _TEXTAREA, "rows": 4,
                 "placeholder": '{"type": "service_account", "project_id": "...", ...}',
@@ -235,17 +227,3 @@ class IntegrationsForm(forms.ModelForm):
                 "placeholder": '{"type": "service_account", "project_id": "...", ...}',
             }),
         }
-
-    def save(self, commit: bool = True) -> Site:
-        """Preserve secret fields when the user leaves them blank."""
-        instance = super().save(commit=False)
-        if self.instance.pk:
-            for field in self._SECRET_FIELDS:
-                if not self.cleaned_data.get(field):
-                    # Restore the value from the database
-                    setattr(instance, field, getattr(
-                        Site.objects.get(pk=self.instance.pk), field,
-                    ))
-        if commit:
-            instance.save()
-        return instance

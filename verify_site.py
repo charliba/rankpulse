@@ -4,7 +4,7 @@ Verify RankPulse site is running correctly.
 Mesma estrutura do verify_site.py / check_server.py do Beezle.
 
 Uso:
-    cd trafic_provider
+    cd rankPulse
     python verify_site.py
 """
 import os

@@ -38,7 +38,7 @@
 
 ### Comando Único:
 ```powershell
-cd trafic_provider
+cd rankPulse
 python deploy.py
 ```
 

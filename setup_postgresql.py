@@ -4,7 +4,7 @@ Instala PostgreSQL no VPS, cria banco e usuário para RankPulse.
 Mesma arquitetura do setup_postgresql.py do Beezle.
 
 Uso:
-    cd trafic_provider
+    cd rankPulse
     python setup_postgresql.py
 """
 import os

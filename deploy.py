@@ -4,7 +4,7 @@ Deploy completo via SSH — RankPulse
 Mesma arquitetura do deploy.py do Beezle (Paramiko + SFTP + backup).
 
 Uso:
-    cd trafic_provider
+    cd rankPulse
     python deploy.py
 """
 import os
@@ -28,6 +28,9 @@ BASE: str = os.getenv("VPS_PROJECT_PATH", "/root/rankpulse")
 GITHUB_REPO: str = os.getenv("GITHUB_REPO", "")
 DOMAIN: str = os.getenv("APP_DOMAIN", "rankpulse.cloud")
 GUNICORN_PORT: str = os.getenv("GUNICORN_PORT", "8002")
+
+# Flag para resetar o banco (usar apenas quando houver mudanças destrutivas de schema)
+RESET_DB: bool = "--reset-db" in sys.argv
 
 # Validação de segurança
 if not HOST or not PASSWORD:
@@ -81,6 +84,8 @@ def main() -> None:
     print("=" * 60)
     print("DEPLOY RANKPULSE")
     print(f"Servidor: {HOST} | Domínio: {DOMAIN}")
+    if RESET_DB:
+        print("⚠️  MODO RESET DB ATIVADO — banco será recriado do zero")
     print("=" * 60)
     sys.stdout.flush()
 
@@ -149,15 +154,18 @@ def main() -> None:
     # Criar estrutura de diretórios no servidor
     dirs = [
         "", "config", "apps", "apps/core", "apps/analytics", "apps/seo",
-        "apps/content", "apps/checklists", "templates", "templates/core",
+        "apps/content", "apps/checklists", "apps/channels", "apps/chat_support",
+        "templates", "templates/core", "templates/channels", "templates/components",
         "static", "static/css", "static/images", "logs", "credentials",
         "apps/core/management", "apps/core/management/commands",
         "apps/analytics/management", "apps/analytics/management/commands",
         "apps/seo/management", "apps/seo/management/commands",
         "apps/content/management", "apps/content/management/commands",
+        "apps/channels/management", "apps/channels/management/commands",
         "apps/core/migrations", "apps/analytics/migrations",
         "apps/seo/migrations", "apps/content/migrations",
-        "apps/checklists/migrations",
+        "apps/checklists/migrations", "apps/channels/migrations",
+        "apps/chat_support/migrations",
     ]
     for d in dirs:
         run_cmd(client, f"mkdir -p {BASE}/{d}")
@@ -200,7 +208,29 @@ def main() -> None:
     print(f"    pip: {out.strip() if out else 'OK'}")
     sys.stdout.flush()
 
-    cmd = f"cd {BASE} && source venv/bin/activate && python manage.py migrate --noinput 2>&1 | tail -5"
+    # Reset DB se solicitado (--reset-db): apaga migrations antigas e recria o banco
+    if RESET_DB:
+        print("    ⚠️  RESET DB solicitado — apagando migrations e recriando banco...")
+        sys.stdout.flush()
+        # Apagar migration files (preserva __init__.py)
+        for app in ("core", "channels", "analytics", "seo", "content", "checklists", "chat_support"):
+            run_cmd(client, f"find {BASE}/apps/{app}/migrations -name '*.py' ! -name '__init__.py' -delete 2>/dev/null")
+            run_cmd(client, f"find {BASE}/apps/{app}/migrations -name '*.pyc' -delete 2>/dev/null")
+        # Dropar e recriar o banco PostgreSQL
+        db_name_out, _ = run_cmd(client, f"grep -oP '(?<=DB_NAME=).*' {BASE}/.env 2>/dev/null")
+        db_name = db_name_out.strip() or "rankpulse"
+        run_cmd(client, f"sudo -u postgres psql -c 'DROP DATABASE IF EXISTS {db_name};' 2>&1", timeout=30)
+        run_cmd(client, f"sudo -u postgres psql -c \"CREATE DATABASE {db_name} OWNER rankpulse;\" 2>&1", timeout=30)
+        print(f"    DB '{db_name}' recriado")
+        sys.stdout.flush()
+
+    # Gerar migrations para todos os apps (necessário pois migrations são criadas no servidor)
+    cmd = f"cd {BASE} && source venv/bin/activate && python manage.py makemigrations core channels analytics seo content checklists 2>&1 | tail -10"
+    out, err = run_cmd(client, cmd, timeout=60)
+    print(f"    makemigrations: {out.strip() if out else 'OK'}")
+    sys.stdout.flush()
+
+    cmd = f"cd {BASE} && source venv/bin/activate && python manage.py migrate --noinput 2>&1 | tail -10"
     out, err = run_cmd(client, cmd, timeout=60)
     print(f"    migrate: {out.strip() if out else 'OK'}")
     sys.stdout.flush()

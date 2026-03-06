@@ -4,7 +4,7 @@ Configure Nginx for rankpulse.cloud on the VPS.
 Creates the Nginx server block and enables the site.
 
 Uso:
-    cd trafic_provider
+    cd rankPulse
     python setup_nginx.py
 """
 import os

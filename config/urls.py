@@ -19,6 +19,8 @@ urlpatterns = [
     path("api/seo/", include("apps.seo.urls", namespace="seo")),
     path("api/content/", include("apps.content.urls", namespace="content")),
     path("api/checklists/", include("apps.checklists.urls", namespace="checklists")),
+    # Channels (Google Ads, Meta Ads)
+    path("api/channels/", include("apps.channels.urls", namespace="channels")),
     # Chat Aura
     path("chat/", include("apps.chat_support.urls", namespace="chat_support")),
     # Dashboard

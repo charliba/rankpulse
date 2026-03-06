@@ -78,7 +78,7 @@ O RankPulse gerencia campanhas do Google Ads via API. A integracao requer:
 ### Opcao B: Via Script Local
 
 ```powershell
-cd trafic_provider
+cd rankPulse
 python _generate_refresh_token.py
 ```
 

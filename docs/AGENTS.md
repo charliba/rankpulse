@@ -22,7 +22,7 @@
 ## Estrutura do Projeto
 
 ```
-trafic_provider/
+rankPulse/
 ├── config/            ← Django settings, urls, wsgi
 ├── apps/
 │   ├── core/          ← Site, GA4 events, KPIs, snapshots, OAuth flows

@@ -4,7 +4,7 @@ Restart Gunicorn on server — RankPulse
 Mesma estrutura do restart_gunicorn.py do Beezle.
 
 Uso:
-    cd trafic_provider
+    cd rankPulse
     python restart_gunicorn.py
 """
 import os

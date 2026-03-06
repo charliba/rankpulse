@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.content.apps.ContentConfig",
     "apps.checklists.apps.ChecklistsConfig",
     "apps.chat_support.apps.ChatSupportConfig",
+    "apps.channels.apps.ChannelsConfig",
 ]
 
 # ─── Middleware ─────────────────────────────────────────
@@ -78,7 +79,7 @@ if "postgresql" in db_engine:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "trafic_provider"),
+            "NAME": os.getenv("DB_NAME", "rankpulse"),
             "USER": os.getenv("DB_USER", "postgres"),
             "PASSWORD": os.getenv("DB_PASSWORD", ""),
             "HOST": os.getenv("DB_HOST", "localhost"),
@@ -140,13 +141,12 @@ GA4_SERVICE_ACCOUNT_KEY_PATH = os.getenv("GA4_SERVICE_ACCOUNT_KEY_PATH", "")
 GSC_SERVICE_ACCOUNT_KEY_PATH = os.getenv("GSC_SERVICE_ACCOUNT_KEY_PATH", "")
 GSC_SITE_URL = os.getenv("GSC_SITE_URL", "")
 
-# ─── Google Ads ──────────────────────────────────────
-GOOGLE_ADS_CUSTOMER_ID = os.getenv("GOOGLE_ADS_CUSTOMER_ID", "")
-GOOGLE_ADS_DEVELOPER_TOKEN = os.getenv("GOOGLE_ADS_DEVELOPER_TOKEN", "")
+# ── Google Ads (platform-level OAuth app credentials) ─
+# These are the OAuth client credentials for the RankPulse app itself.
+# Per-channel credentials (customer_id, refresh_token, etc.) are stored
+# in ChannelCredential model.
 GOOGLE_ADS_CLIENT_ID = os.getenv("GOOGLE_ADS_CLIENT_ID", "")
 GOOGLE_ADS_CLIENT_SECRET = os.getenv("GOOGLE_ADS_CLIENT_SECRET", "")
-GOOGLE_ADS_REFRESH_TOKEN = os.getenv("GOOGLE_ADS_REFRESH_TOKEN", "")
-GOOGLE_ADS_LOGIN_CUSTOMER_ID = os.getenv("GOOGLE_ADS_LOGIN_CUSTOMER_ID", "")
 
 # ─── OpenAI ──────────────────────────────────────────
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -156,11 +156,6 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 APP_NAME = os.getenv("APP_NAME", "RankPulse")
 APP_DOMAIN = os.getenv("APP_DOMAIN", "rankpulse.cloud")
 APP_URL = os.getenv("APP_URL", "https://rankpulse.cloud")
-
-# ─── Default Target Site (Beezle) ────────────────────
-SITE_NAME = os.getenv("SITE_NAME", "Beezle")
-SITE_DOMAIN = os.getenv("SITE_DOMAIN", "beezle.io")
-SITE_URL = os.getenv("SITE_URL", "https://beezle.io")
 
 # ─── Production Security ─────────────────────────────
 # These settings are ONLY applied when DEBUG=False (production).
@@ -200,7 +195,7 @@ LOGGING = {
         },
         "file": {
             "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "trafic_provider.log",
+            "filename": BASE_DIR / "logs" / "rankpulse.log",
             "formatter": "verbose",
         },
     },

@@ -1,4 +1,4 @@
-"""Google Ads API Client — Campaign, Ad Group, Ad, and Budget management.
+﻿"""Google Ads API Client â€” Campaign, Ad Group, Ad, and Budget management.
 
 Manages Google Ads campaigns remotely: create/update campaigns, ad groups,
 responsive search ads, keyword targeting, budgets, and conversion tracking.
@@ -12,7 +12,7 @@ Requirements:
 
 Authentication:
     Unlike GA4/GSC (service account), Google Ads API requires OAuth2 with:
-    1. Developer token (from MCC → API Center)
+    1. Developer token (from MCC â†’ API Center)
     2. OAuth2 client ID + client secret (from Google Cloud Console)
     3. OAuth2 refresh token (obtained via consent flow)
     4. Customer ID (format: 123-456-7890, stored without dashes)
@@ -72,7 +72,7 @@ class GoogleAdsManager:
             refresh_token="...",
         )
         mgr.list_campaigns()
-        mgr.create_campaign("Beezle — Programa de Indicação", daily_budget_brl=50.0)
+        mgr.create_campaign("Beezle â€” Programa de IndicaÃ§Ã£o", daily_budget_brl=50.0)
     """
 
     def __init__(
@@ -109,7 +109,7 @@ class GoogleAdsManager:
         """Get a Google Ads service client."""
         return self.client.get_service(service_name, version=version)
 
-    # ── Account Info ────────────────────────────────────────────
+    # â”€â”€ Account Info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def get_account_info(self) -> dict[str, Any]:
         """Get basic account information.
@@ -151,7 +151,7 @@ class GoogleAdsManager:
             logger.error("Account info error: %s", exc)
             return {"success": False, "error": str(exc)}
 
-    # ── Campaigns ───────────────────────────────────────────────
+    # â”€â”€ Campaigns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def list_campaigns(self, include_removed: bool = False) -> dict[str, Any]:
         """List all campaigns in the account.
@@ -267,7 +267,7 @@ class GoogleAdsManager:
         try:
             # 1. Create budget
             budget_resource = self.create_campaign_budget(
-                name=f"Budget — {name}",
+                name=f"Budget â€” {name}",
                 daily_amount_brl=daily_budget_brl,
             )
 
@@ -426,7 +426,7 @@ class GoogleAdsManager:
             logger.error("Update budget error: %s", exc)
             return {"success": False, "error": str(exc)}
 
-    # ── Ad Groups ───────────────────────────────────────────────
+    # â”€â”€ Ad Groups â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def list_ad_groups(self, campaign_id: str) -> dict[str, Any]:
         """List ad groups for a campaign.
@@ -528,7 +528,7 @@ class GoogleAdsManager:
             logger.error("Create ad group error: %s", exc)
             return {"success": False, "error": str(exc)}
 
-    # ── Keywords ────────────────────────────────────────────────
+    # â”€â”€ Keywords â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def add_keywords(
         self,
@@ -627,7 +627,7 @@ class GoogleAdsManager:
             logger.error("List keywords error: %s", exc)
             return {"success": False, "error": str(exc)}
 
-    # ── Ads (Responsive Search Ads) ─────────────────────────────
+    # â”€â”€ Ads (Responsive Search Ads) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def create_responsive_search_ad(
         self,
@@ -701,7 +701,7 @@ class GoogleAdsManager:
             logger.error("Create RSA error: %s", exc)
             return {"success": False, "error": str(exc)}
 
-    # ── Conversion Tracking ─────────────────────────────────────
+    # â”€â”€ Conversion Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def list_conversion_actions(self) -> dict[str, Any]:
         """List all conversion actions configured in the account.
@@ -809,7 +809,7 @@ class GoogleAdsManager:
             logger.error("Create conversion action error: %s", exc)
             return {"success": False, "error": str(exc)}
 
-    # ── Performance Reports ─────────────────────────────────────
+    # â”€â”€ Performance Reports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def get_campaign_performance(
         self,
@@ -959,169 +959,459 @@ class GoogleAdsManager:
             logger.error("Keyword performance error: %s", exc)
             return {"success": False, "error": str(exc)}
 
-    # ── Beezle Quick Setup ──────────────────────────────────────
+    # â”€â”€ Assets (Sitelinks, Callouts, Snippets, Call) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    def setup_beezle_campaign(self) -> dict[str, Any]:
-        """Create a complete Beezle campaign setup.
+    def create_sitelink_asset(
+        self,
+        link_text: str,
+        final_url: str,
+        description1: str = "",
+        description2: str = "",
+    ) -> dict[str, Any]:
+        """Create a sitelink asset.
 
-        Creates:
-        1. Search campaign with maximize_conversions
-        2. Three ad groups (indicação, embaixadores, growth)
-        3. Keywords for each ad group
-        4. Responsive Search Ads
+        Args:
+            link_text: Sitelink text (max 25 chars).
+            final_url: Landing page URL.
+            description1: First description line (max 35 chars).
+            description2: Second description line (max 35 chars).
 
         Returns:
-            Dict with all created resources.
+            Dict with created asset resource name.
         """
-        logger.info("Setting up full Beezle campaign")
-        results: dict[str, Any] = {"steps": []}
-
+        logger.info("Creating sitelink asset: %s â†’ %s", link_text, final_url)
         try:
-            # 1. Create campaign
-            campaign_result = self.create_campaign(
-                name="Beezle — Programa de Indicação",
-                daily_budget_brl=50.0,
-                bidding_strategy="MAXIMIZE_CONVERSIONS",
+            asset_service = self._get_service("AssetService")
+            op = self.client.get_type("AssetOperation")
+            asset = op.create
+
+            asset.name = f"Sitelink â€” {link_text}"
+            asset.sitelink_asset.link_text = link_text[:25]
+            asset.sitelink_asset.final_urls.append(final_url)
+            if description1:
+                asset.sitelink_asset.description1 = description1[:35]
+            if description2:
+                asset.sitelink_asset.description2 = description2[:35]
+
+            response = asset_service.mutate_assets(
+                customer_id=self.customer_id,
+                operations=[op],
             )
-            results["steps"].append({"step": "campaign", "result": campaign_result})
-            if not campaign_result["success"]:
-                return {"success": False, "error": "Campaign creation failed", "details": results}
-
-            # Extract campaign ID from resource name
-            campaign_resource = campaign_result["resource_name"]
-            campaign_id = campaign_resource.split("/")[-1]
-
-            # 2. Ad Group: Programa de Indicação
-            ag1 = self.create_ad_group(campaign_id, "Programa de Indicação", cpc_bid_brl=2.50)
-            results["steps"].append({"step": "ad_group_indicacao", "result": ag1})
-
-            if ag1["success"]:
-                ag1_id = ag1["resource_name"].split("/")[-1]
-
-                # Keywords
-                kw1 = self.add_keywords(ag1_id, [
-                    {"text": "programa de indicação", "match_type": "PHRASE"},
-                    {"text": "sistema de indicação para empresas", "match_type": "PHRASE"},
-                    {"text": "plataforma de indicação", "match_type": "PHRASE"},
-                    {"text": "programa de referral", "match_type": "BROAD"},
-                    {"text": "indicação de clientes software", "match_type": "BROAD"},
-                ])
-                results["steps"].append({"step": "keywords_indicacao", "result": kw1})
-
-                # RSA
-                rsa1 = self.create_responsive_search_ad(
-                    ad_group_id=ag1_id,
-                    headlines=[
-                        "Programa de Indicação Beezle",
-                        "Crie Seu Programa de Indicação",
-                        "Indicação que Gera Receita",
-                        "Aumente Vendas por Indicação",
-                        "Plataforma de Referral #1",
-                    ],
-                    descriptions=[
-                        "Crie programas de indicação em minutos. Dashboard completo, pagamentos automáticos via Stripe.",
-                        "Transforme clientes em embaixadores. Acompanhe indicações, recompensas e ROI em tempo real.",
-                    ],
-                    final_url="https://beezle.io/vendas/programa-de-indicacao/",
-                    path1="indicacao",
-                    path2="criar",
-                )
-                results["steps"].append({"step": "rsa_indicacao", "result": rsa1})
-
-            # 3. Ad Group: Marketing de Embaixadores
-            ag2 = self.create_ad_group(campaign_id, "Marketing de Embaixadores", cpc_bid_brl=2.00)
-            results["steps"].append({"step": "ad_group_embaixadores", "result": ag2})
-
-            if ag2["success"]:
-                ag2_id = ag2["resource_name"].split("/")[-1]
-
-                kw2 = self.add_keywords(ag2_id, [
-                    {"text": "marketing de embaixadores", "match_type": "PHRASE"},
-                    {"text": "embaixadores de marca", "match_type": "PHRASE"},
-                    {"text": "ambassador marketing", "match_type": "BROAD"},
-                    {"text": "influenciadores para marcas", "match_type": "BROAD"},
-                ])
-                results["steps"].append({"step": "keywords_embaixadores", "result": kw2})
-
-                rsa2 = self.create_responsive_search_ad(
-                    ad_group_id=ag2_id,
-                    headlines=[
-                        "Embaixadores de Marca | Beezle",
-                        "Marketing com Embaixadores",
-                        "Escale com Embaixadores",
-                        "Plataforma p/ Embaixadores",
-                        "Gerencie Embaixadores Fácil",
-                    ],
-                    descriptions=[
-                        "Recrute e gerencie embaixadores de marca com Beezle. Pagamentos automáticos e dashboard completo.",
-                        "Seus clientes são seus melhores vendedores. Ative-os como embaixadores em poucos cliques.",
-                    ],
-                    final_url="https://beezle.io/vendas/embaixadores-de-marca/",
-                    path1="embaixadores",
-                )
-                results["steps"].append({"step": "rsa_embaixadores", "result": rsa2})
-
-            # 4. Ad Group: Growth Hacking
-            ag3 = self.create_ad_group(campaign_id, "Growth Hacking", cpc_bid_brl=1.80)
-            results["steps"].append({"step": "ad_group_growth", "result": ag3})
-
-            if ag3["success"]:
-                ag3_id = ag3["resource_name"].split("/")[-1]
-
-                kw3 = self.add_keywords(ag3_id, [
-                    {"text": "growth hacking ferramenta", "match_type": "BROAD"},
-                    {"text": "aquisição de clientes orgânica", "match_type": "BROAD"},
-                    {"text": "crescimento por indicação", "match_type": "PHRASE"},
-                    {"text": "viral marketing software", "match_type": "BROAD"},
-                ])
-                results["steps"].append({"step": "keywords_growth", "result": kw3})
-
-                rsa3 = self.create_responsive_search_ad(
-                    ad_group_id=ag3_id,
-                    headlines=[
-                        "Growth Hacking com Beezle",
-                        "Cresça por Indicação",
-                        "Aquisição Orgânica de Clientes",
-                        "Motor de Crescimento Viral",
-                        "Escale Sem Ads Caros",
-                    ],
-                    descriptions=[
-                        "Growth hacking via indicações. Reduza CAC e aumente LTV com a plataforma Beezle.",
-                        "Transforme cada cliente em um canal de aquisição. Setup em 5 minutos, resultados imediatos.",
-                    ],
-                    final_url="https://beezle.io/vendas/como-funciona/",
-                    path1="growth",
-                    path2="indicacao",
-                )
-                results["steps"].append({"step": "rsa_growth", "result": rsa3})
-
-            # 5. Create conversion actions
-            conv1 = self.create_conversion_action(
-                name="Beezle — Purchase",
-                category="PURCHASE",
-                value_settings={"default_value": 97.0, "currency": "BRL"},
-            )
-            results["steps"].append({"step": "conversion_purchase", "result": conv1})
-
-            conv2 = self.create_conversion_action(
-                name="Beezle — Sign Up",
-                category="SIGNUP",
-            )
-            results["steps"].append({"step": "conversion_signup", "result": conv2})
-
-            conv3 = self.create_conversion_action(
-                name="Beezle — Lead",
-                category="LEAD",
-            )
-            results["steps"].append({"step": "conversion_lead", "result": conv3})
-
-            results["success"] = True
-            results["campaign_id"] = campaign_id
-            logger.info("Beezle campaign setup complete")
-            return results
+            resource_name = response.results[0].resource_name
+            logger.info("Sitelink asset created: %s", resource_name)
+            return {"success": True, "resource_name": resource_name, "link_text": link_text}
 
         except Exception as exc:
-            logger.error("Beezle campaign setup error: %s", exc)
-            results["success"] = False
-            results["error"] = str(exc)
-            return results
+            logger.error("Create sitelink asset error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def create_callout_asset(self, callout_text: str) -> dict[str, Any]:
+        """Create a callout asset.
+
+        Args:
+            callout_text: Callout text (max 25 chars).
+
+        Returns:
+            Dict with created asset resource name.
+        """
+        logger.info("Creating callout asset: %s", callout_text)
+        try:
+            asset_service = self._get_service("AssetService")
+            op = self.client.get_type("AssetOperation")
+            asset = op.create
+
+            asset.name = f"Callout â€” {callout_text}"
+            asset.callout_asset.callout_text = callout_text[:25]
+
+            response = asset_service.mutate_assets(
+                customer_id=self.customer_id,
+                operations=[op],
+            )
+            resource_name = response.results[0].resource_name
+            logger.info("Callout asset created: %s", resource_name)
+            return {"success": True, "resource_name": resource_name, "callout_text": callout_text}
+
+        except Exception as exc:
+            logger.error("Create callout asset error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def create_structured_snippet_asset(
+        self,
+        header: str,
+        values: list[str],
+    ) -> dict[str, Any]:
+        """Create a structured snippet asset.
+
+        Args:
+            header: Snippet header (e.g. "ServiÃ§os", "Tipos", "Bairros").
+            values: List of snippet values (min 3).
+
+        Returns:
+            Dict with created asset resource name.
+        """
+        logger.info("Creating structured snippet: %s (%d values)", header, len(values))
+        try:
+            asset_service = self._get_service("AssetService")
+            op = self.client.get_type("AssetOperation")
+            asset = op.create
+
+            asset.name = f"Snippet â€” {header}"
+            asset.structured_snippet_asset.header = header
+            for v in values:
+                asset.structured_snippet_asset.values.append(v[:25])
+
+            response = asset_service.mutate_assets(
+                customer_id=self.customer_id,
+                operations=[op],
+            )
+            resource_name = response.results[0].resource_name
+            logger.info("Structured snippet created: %s", resource_name)
+            return {"success": True, "resource_name": resource_name, "header": header}
+
+        except Exception as exc:
+            logger.error("Create structured snippet error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def create_call_asset(
+        self,
+        phone_number: str,
+        country_code: str = "BR",
+    ) -> dict[str, Any]:
+        """Create a call asset (phone extension).
+
+        Args:
+            phone_number: Phone number (e.g. "+5521991234567").
+            country_code: Two-letter country code.
+
+        Returns:
+            Dict with created asset resource name.
+        """
+        logger.info("Creating call asset: %s", phone_number)
+        try:
+            asset_service = self._get_service("AssetService")
+            op = self.client.get_type("AssetOperation")
+            asset = op.create
+
+            asset.name = f"Call â€” {phone_number}"
+            asset.call_asset.phone_number = phone_number
+            asset.call_asset.country_code = country_code
+
+            response = asset_service.mutate_assets(
+                customer_id=self.customer_id,
+                operations=[op],
+            )
+            resource_name = response.results[0].resource_name
+            logger.info("Call asset created: %s", resource_name)
+            return {"success": True, "resource_name": resource_name, "phone_number": phone_number}
+
+        except Exception as exc:
+            logger.error("Create call asset error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def link_assets_to_campaign(
+        self,
+        campaign_id: str,
+        asset_resource_names: list[str],
+        field_type: str = "SITELINK",
+    ) -> dict[str, Any]:
+        """Link asset(s) to a campaign.
+
+        Args:
+            campaign_id: Campaign ID.
+            asset_resource_names: List of asset resource names to link.
+            field_type: Asset field type â€” SITELINK, CALLOUT, STRUCTURED_SNIPPET, CALL.
+
+        Returns:
+            Dict with linked count.
+        """
+        logger.info(
+            "Linking %d %s assets to campaign %s",
+            len(asset_resource_names), field_type, campaign_id,
+        )
+        try:
+            campaign_asset_service = self._get_service("CampaignAssetService")
+            operations = []
+
+            for resource_name in asset_resource_names:
+                op = self.client.get_type("CampaignAssetOperation")
+                campaign_asset = op.create
+                campaign_asset.campaign = self._get_service(
+                    "CampaignService",
+                ).campaign_path(self.customer_id, campaign_id)
+                campaign_asset.asset = resource_name
+                campaign_asset.field_type = getattr(
+                    self.client.enums.AssetFieldTypeEnum, field_type,
+                )
+                operations.append(op)
+
+            response = campaign_asset_service.mutate_campaign_assets(
+                customer_id=self.customer_id,
+                operations=operations,
+            )
+            linked = len(response.results)
+            logger.info("Linked %d assets", linked)
+            return {"success": True, "linked": linked, "field_type": field_type}
+
+        except Exception as exc:
+            logger.error("Link assets to campaign error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # â”€â”€ Negative Keywords â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    def add_negative_keywords(
+        self,
+        campaign_id: str,
+        keywords: list[dict[str, str]],
+    ) -> dict[str, Any]:
+        """Add negative keywords to a campaign.
+
+        Args:
+            campaign_id: Campaign ID.
+            keywords: List of {"text": "...", "match_type": "BROAD|PHRASE|EXACT"}.
+
+        Returns:
+            Dict with results.
+        """
+        logger.info("Adding %d negative keywords to campaign %s", len(keywords), campaign_id)
+        try:
+            criterion_service = self._get_service("CampaignCriterionService")
+            operations = []
+
+            for kw in keywords:
+                op = self.client.get_type("CampaignCriterionOperation")
+                criterion = op.create
+                criterion.campaign = self._get_service(
+                    "CampaignService",
+                ).campaign_path(self.customer_id, campaign_id)
+                criterion.negative = True
+                criterion.keyword.text = kw["text"]
+                criterion.keyword.match_type = getattr(
+                    self.client.enums.KeywordMatchTypeEnum,
+                    kw.get("match_type", "BROAD"),
+                )
+                operations.append(op)
+
+            response = criterion_service.mutate_campaign_criteria(
+                customer_id=self.customer_id,
+                operations=operations,
+            )
+            results = [r.resource_name for r in response.results]
+            logger.info("Added %d negative keywords", len(results))
+            return {"success": True, "negatives_added": len(results), "resources": results}
+
+        except Exception as exc:
+            logger.error("Add negative keywords error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # â”€â”€ Geo-Targeting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    def set_geo_targets(
+        self,
+        campaign_id: str,
+        location_ids: list[int],
+        negative_location_ids: list[int] | None = None,
+    ) -> dict[str, Any]:
+        """Set geographic targeting for a campaign.
+
+        Uses Google Ads geo target constants. Common IDs:
+            - 1001773: Rio de Janeiro (city)
+            - 20106:   Rio de Janeiro (state)
+            - 2076:    Brazil
+
+        Args:
+            campaign_id: Campaign ID.
+            location_ids: List of geo target constant IDs to target.
+            negative_location_ids: Optional geo IDs to exclude.
+
+        Returns:
+            Dict with results.
+        """
+        logger.info("Setting geo targets for campaign %s: %s", campaign_id, location_ids)
+        try:
+            criterion_service = self._get_service("CampaignCriterionService")
+            operations = []
+
+            for loc_id in location_ids:
+                op = self.client.get_type("CampaignCriterionOperation")
+                criterion = op.create
+                criterion.campaign = self._get_service(
+                    "CampaignService",
+                ).campaign_path(self.customer_id, campaign_id)
+                criterion.location.geo_target_constant = (
+                    f"geoTargetConstants/{loc_id}"
+                )
+                operations.append(op)
+
+            for loc_id in (negative_location_ids or []):
+                op = self.client.get_type("CampaignCriterionOperation")
+                criterion = op.create
+                criterion.campaign = self._get_service(
+                    "CampaignService",
+                ).campaign_path(self.customer_id, campaign_id)
+                criterion.negative = True
+                criterion.location.geo_target_constant = (
+                    f"geoTargetConstants/{loc_id}"
+                )
+                operations.append(op)
+
+            response = criterion_service.mutate_campaign_criteria(
+                customer_id=self.customer_id,
+                operations=operations,
+            )
+            results = [r.resource_name for r in response.results]
+            logger.info("Set %d geo targets", len(results))
+            return {"success": True, "targets_set": len(results), "resources": results}
+
+        except Exception as exc:
+            logger.error("Set geo targets error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # â”€â”€ Ad Schedule â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    def set_ad_schedule(
+        self,
+        campaign_id: str,
+        schedules: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Set ad schedule (day/time targeting) for a campaign.
+
+        Args:
+            campaign_id: Campaign ID.
+            schedules: List of schedule dicts, each with:
+                - day: "MONDAY", "TUESDAY", ..., "SUNDAY"
+                - start_hour: 0-23
+                - start_minute: "ZERO", "FIFTEEN", "THIRTY", "FORTY_FIVE"
+                - end_hour: 0-24
+                - end_minute: "ZERO", "FIFTEEN", "THIRTY", "FORTY_FIVE"
+
+        Returns:
+            Dict with results.
+        """
+        logger.info("Setting ad schedule for campaign %s (%d slots)", campaign_id, len(schedules))
+        try:
+            criterion_service = self._get_service("CampaignCriterionService")
+            operations = []
+
+            for sched in schedules:
+                op = self.client.get_type("CampaignCriterionOperation")
+                criterion = op.create
+                criterion.campaign = self._get_service(
+                    "CampaignService",
+                ).campaign_path(self.customer_id, campaign_id)
+
+                ad_schedule = criterion.ad_schedule
+                ad_schedule.day_of_week = getattr(
+                    self.client.enums.DayOfWeekEnum, sched["day"],
+                )
+                ad_schedule.start_hour = sched.get("start_hour", 0)
+                ad_schedule.start_minute = getattr(
+                    self.client.enums.MinuteOfHourEnum,
+                    sched.get("start_minute", "ZERO"),
+                )
+                ad_schedule.end_hour = sched.get("end_hour", 24)
+                ad_schedule.end_minute = getattr(
+                    self.client.enums.MinuteOfHourEnum,
+                    sched.get("end_minute", "ZERO"),
+                )
+                operations.append(op)
+
+            response = criterion_service.mutate_campaign_criteria(
+                customer_id=self.customer_id,
+                operations=operations,
+            )
+            results = [r.resource_name for r in response.results]
+            logger.info("Set %d ad schedules", len(results))
+            return {"success": True, "schedules_set": len(results), "resources": results}
+
+        except Exception as exc:
+            logger.error("Set ad schedule error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # â”€â”€ Update RSA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    def update_responsive_search_ad(
+        self,
+        ad_group_id: str,
+        ad_id: str,
+        headlines: list[str] | None = None,
+        descriptions: list[str] | None = None,
+        final_url: str | None = None,
+        path1: str | None = None,
+        path2: str | None = None,
+    ) -> dict[str, Any]:
+        """Update an existing Responsive Search Ad.
+
+        Args:
+            ad_group_id: Ad group ID containing the ad.
+            ad_id: The ad ID to update.
+            headlines: New headlines (replaces all existing).
+            descriptions: New descriptions (replaces all existing).
+            final_url: New landing page URL.
+            path1: New display path 1.
+            path2: New display path 2.
+
+        Returns:
+            Dict with update result.
+        """
+        logger.info("Updating RSA %s in ad group %s", ad_id, ad_group_id)
+        try:
+            ad_service = self._get_service("AdService")
+            op = self.client.get_type("AdOperation")
+            ad = op.update
+
+            ad.resource_name = ad_service.ad_path(
+                self.customer_id, ad_id,
+            )
+
+            update_paths: list[str] = []
+
+            if final_url is not None:
+                ad.final_urls.clear()
+                ad.final_urls.append(final_url)
+                update_paths.append("final_urls")
+
+            if headlines is not None:
+                del ad.responsive_search_ad.headlines[:]
+                for h in headlines:
+                    asset = self.client.get_type("AdTextAsset")
+                    asset.text = h[:30]
+                    ad.responsive_search_ad.headlines.append(asset)
+                update_paths.append("responsive_search_ad.headlines")
+
+            if descriptions is not None:
+                del ad.responsive_search_ad.descriptions[:]
+                for d in descriptions:
+                    asset = self.client.get_type("AdTextAsset")
+                    asset.text = d[:90]
+                    ad.responsive_search_ad.descriptions.append(asset)
+                update_paths.append("responsive_search_ad.descriptions")
+
+            if path1 is not None:
+                ad.responsive_search_ad.path1 = path1[:15]
+                update_paths.append("responsive_search_ad.path1")
+            if path2 is not None:
+                ad.responsive_search_ad.path2 = path2[:15]
+                update_paths.append("responsive_search_ad.path2")
+
+            if not update_paths:
+                return {"success": False, "error": "No fields to update"}
+
+            from google.protobuf import field_mask_pb2
+            op.update_mask = field_mask_pb2.FieldMask(paths=update_paths)
+
+            response = ad_service.mutate_ads(
+                customer_id=self.customer_id,
+                operations=[op],
+            )
+            resource_name = response.results[0].resource_name
+            logger.info("RSA updated: %s", resource_name)
+
+            return {
+                "success": True,
+                "resource_name": resource_name,
+                "updated_fields": update_paths,
+            }
+
+        except Exception as exc:
+            logger.error("Update RSA error: %s", exc)
+            return {"success": False, "error": str(exc)}

@@ -10,7 +10,7 @@ VPS_USER = "root"
 VPS_PASS = "REDACTED"
 VPS_BASE = "/root/rankpulse"
 
-LOCAL_BASE = r"c:\Users\mende\OneDrive\Profissional\python\VPS_Hostinger_31.97.171.87\trafic_provider"
+LOCAL_BASE = r"c:\Users\mende\OneDrive\Profissional\python\VPS_Hostinger_31.97.171.87\rankPulse"
 
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

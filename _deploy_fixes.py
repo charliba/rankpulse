@@ -5,7 +5,7 @@ import os
 
 warnings.filterwarnings("ignore")
 
-LOCAL_BASE = r"c:\Users\mende\OneDrive\Profissional\python\VPS_Hostinger_31.97.171.87\trafic_provider"
+LOCAL_BASE = r"c:\Users\mende\OneDrive\Profissional\python\VPS_Hostinger_31.97.171.87\rankPulse"
 VPS_BASE = "/root/rankpulse"
 
 FILES = [
