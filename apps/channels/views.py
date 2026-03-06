@@ -543,7 +543,23 @@ def meta_oauth_callback(request):
     # Save token to credentials
     cred, _ = ChannelCredential.objects.get_or_create(channel=channel)
     cred.access_token = final_token
-    cred.save(update_fields=["access_token"])
+
+    # Auto-fetch ad account ID
+    try:
+        acct_resp = http_requests.get(
+            f"https://graph.facebook.com/{META_GRAPH_VERSION}/me/adaccounts",
+            params={"access_token": final_token, "fields": "id,name", "limit": 1},
+            timeout=15,
+        )
+        acct_data = acct_resp.json()
+        accounts = acct_data.get("data", [])
+        if accounts:
+            cred.account_id = accounts[0]["id"]
+            logger.info("Auto-detected ad account: %s (%s)", accounts[0]["id"], accounts[0].get("name", ""))
+    except Exception:
+        logger.warning("Could not auto-detect ad account ID", exc_info=True)
+
+    cred.save(update_fields=["access_token", "account_id"])
 
     logger.info("Meta access token saved for channel %s (pk=%d)", channel.name, channel.pk)
     messages.success(request, "Meta Ads conectado com sucesso! Access Token salvo.")

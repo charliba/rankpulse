@@ -29,7 +29,7 @@ class ChannelForm(forms.ModelForm):
 class ChannelCredentialForm(forms.ModelForm):
     """Form for editing channel credentials."""
 
-    _SECRET_FIELDS = ("client_secret", "refresh_token", "access_token")
+    _SECRET_FIELDS = ("client_secret", "refresh_token")
 
     class Meta:
         model = ChannelCredential
@@ -59,9 +59,8 @@ class ChannelCredentialForm(forms.ModelForm):
             "login_customer_id": forms.TextInput(attrs={
                 "class": _INPUT, "placeholder": "Opcional — ID da conta MCC",
             }),
-            "access_token": forms.PasswordInput(attrs={
+            "access_token": forms.TextInput(attrs={
                 "class": _INPUT, "placeholder": "Meta Ads Access Token",
-                "autocomplete": "new-password",
             }),
             "account_id": forms.TextInput(attrs={
                 "class": _INPUT, "placeholder": "act_123456789",
