@@ -458,7 +458,7 @@ def meta_oauth_start(request, channel_id: int):
         )
 
     app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
-    redirect_uri = f"https://app.{app_domain}/channels/oauth/meta/callback/"
+    redirect_uri = f"https://{app_domain}/channels/oauth/meta/callback/"
 
     params = {
         "client_id": META_APP_ID,
@@ -498,7 +498,7 @@ def meta_oauth_callback(request):
     import requests as http_requests
 
     app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
-    redirect_uri = f"https://app.{app_domain}/channels/oauth/meta/callback/"
+    redirect_uri = f"https://{app_domain}/channels/oauth/meta/callback/"
 
     # Exchange code for short-lived token
     try:
