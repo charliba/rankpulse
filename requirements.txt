@@ -13,6 +13,9 @@ google-analytics-data>=0.18        # GA4 Data API (reporting)
 google-analytics-admin>=0.22       # GA4 Admin API (key events, streams)
 google-ads>=25.1                   # Google Ads API (campaigns, ads, keywords)
 
+# Meta (Facebook) APIs
+facebook-business>=21.0            # Meta Marketing API (campaigns, ads, insights)
+
 # AI Content Generation
 openai>=1.30
 agno>=1.0.0

@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import urllib.parse
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -412,3 +414,306 @@ def ads_keyword_performance(request, channel_id: int) -> JsonResponse:
     days = int(request.GET.get("days", 30))
     mgr = _get_ads_manager(channel)
     return JsonResponse(mgr.get_keyword_performance(campaign_id=campaign_id, days=days))
+
+
+# ── Meta Ads Helpers ───────────────────────────────────────────
+
+META_APP_ID = os.environ.get("META_APP_ID", "")
+META_APP_SECRET = os.environ.get("META_APP_SECRET", "")
+META_GRAPH_VERSION = "v21.0"
+META_OAUTH_SCOPES = "ads_management,ads_read,business_management"
+
+
+def _get_meta_manager(channel: Channel):
+    """Build a MetaAdsManager from channel credentials."""
+    from apps.analytics.meta_ads_client import MetaAdsManager
+
+    try:
+        cred = channel.credentials
+    except ChannelCredential.DoesNotExist:
+        raise ValueError("Canal sem credenciais configuradas.")
+
+    if not cred.access_token or not cred.account_id:
+        raise ValueError("Access Token e Account ID são obrigatórios para Meta Ads.")
+
+    return MetaAdsManager(
+        access_token=cred.access_token,
+        account_id=cred.account_id,
+        app_id=META_APP_ID,
+        app_secret=META_APP_SECRET,
+    )
+
+
+# ── Meta Ads OAuth Flow ───────────────────────────────────────
+
+@login_required
+def meta_oauth_start(request, channel_id: int):
+    """Redirect user to Facebook OAuth dialog to authorize Meta Ads access."""
+    channel = _get_user_channel(request, channel_id)
+
+    if not META_APP_ID:
+        return JsonResponse(
+            {"error": "META_APP_ID não configurado no servidor."},
+            status=400,
+        )
+
+    app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
+    redirect_uri = f"https://app.{app_domain}/channels/{channel.pk}/oauth/meta/callback/"
+
+    params = {
+        "client_id": META_APP_ID,
+        "redirect_uri": redirect_uri,
+        "scope": META_OAUTH_SCOPES,
+        "response_type": "code",
+        "state": str(channel.pk),
+    }
+
+    auth_url = f"https://www.facebook.com/{META_GRAPH_VERSION}/dialog/oauth?{urllib.parse.urlencode(params)}"
+    return redirect(auth_url)
+
+
+@login_required
+def meta_oauth_callback(request, channel_id: int):
+    """Handle Facebook OAuth callback — exchange code for long-lived token."""
+    channel = _get_user_channel(request, channel_id)
+    code = request.GET.get("code", "")
+    error = request.GET.get("error", "")
+
+    if error:
+        error_reason = request.GET.get("error_reason", "")
+        messages.error(request, f"Meta OAuth negado: {error_reason or error}")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    if not code:
+        messages.error(request, "Código de autorização não recebido do Facebook.")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    import requests as http_requests
+
+    app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
+    redirect_uri = f"https://app.{app_domain}/channels/{channel.pk}/oauth/meta/callback/"
+
+    # Exchange code for short-lived token
+    try:
+        resp = http_requests.get(
+            f"https://graph.facebook.com/{META_GRAPH_VERSION}/oauth/access_token",
+            params={
+                "client_id": META_APP_ID,
+                "client_secret": META_APP_SECRET,
+                "redirect_uri": redirect_uri,
+                "code": code,
+            },
+            timeout=30,
+        )
+        data = resp.json()
+    except Exception as exc:
+        logger.exception("Meta OAuth token exchange failed")
+        messages.error(request, f"Erro ao contatar o Facebook: {exc}")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    if "error" in data:
+        error_msg = data["error"].get("message", str(data["error"]))
+        messages.error(request, f"Facebook retornou erro: {error_msg}")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    short_token = data.get("access_token", "")
+
+    # Exchange for long-lived token (60 days)
+    from apps.analytics.meta_ads_client import MetaAdsManager
+    long_result = MetaAdsManager.exchange_short_lived_token(
+        app_id=META_APP_ID,
+        app_secret=META_APP_SECRET,
+        short_lived_token=short_token,
+    )
+
+    if not long_result["success"]:
+        # Fall back to short-lived token
+        logger.warning("Failed to get long-lived token, using short-lived: %s", long_result["error"])
+        final_token = short_token
+    else:
+        final_token = long_result["access_token"]
+
+    # Save token to credentials
+    cred, _ = ChannelCredential.objects.get_or_create(channel=channel)
+    cred.access_token = final_token
+    cred.save(update_fields=["access_token"])
+
+    logger.info("Meta access token saved for channel %s (pk=%d)", channel.name, channel.pk)
+    messages.success(request, "Meta Ads conectado com sucesso! Access Token salvo.")
+    return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+
+@login_required
+@require_POST
+def meta_test_connection(request, channel_id: int) -> JsonResponse:
+    """Test the Meta Ads API connection with current credentials."""
+    channel = _get_user_channel(request, channel_id)
+
+    if channel.platform != "meta_ads":
+        return JsonResponse({"error": "Canal não é Meta Ads."}, status=400)
+
+    try:
+        mgr = _get_meta_manager(channel)
+        result = mgr.get_account_info()
+        if result["success"]:
+            return JsonResponse({
+                "success": True,
+                "message": f"Conexão OK! Conta: {result['name']} ({result['id']}) — {result['status']}",
+            })
+        return JsonResponse({"error": result["error"]}, status=400)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    except Exception as exc:
+        return JsonResponse({"error": f"Erro: {exc}"}, status=502)
+
+
+# ── Meta Ads API Proxy ─────────────────────────────────────────
+
+@login_required
+@require_GET
+def meta_account_info(request, channel_id: int) -> JsonResponse:
+    """GET /api/channels/<channel_id>/meta/account/"""
+    channel = _get_user_channel(request, channel_id)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.get_account_info())
+
+
+@login_required
+@require_GET
+def meta_campaigns(request, channel_id: int) -> JsonResponse:
+    """GET /api/channels/<channel_id>/meta/campaigns/"""
+    channel = _get_user_channel(request, channel_id)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.list_campaigns())
+
+
+@login_required
+@require_POST
+def meta_create_campaign(request, channel_id: int) -> JsonResponse:
+    """POST /api/channels/<channel_id>/meta/campaigns/create/"""
+    channel = _get_user_channel(request, channel_id)
+    body = json.loads(request.body)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.create_campaign(
+        name=body.get("name", ""),
+        objective=body.get("objective", "OUTCOME_TRAFFIC"),
+        daily_budget_brl=body.get("daily_budget_brl"),
+        lifetime_budget_brl=body.get("lifetime_budget_brl"),
+        status=body.get("status", "PAUSED"),
+        special_ad_categories=body.get("special_ad_categories"),
+    ))
+
+
+@login_required
+@require_POST
+def meta_update_campaign_status(request, channel_id: int) -> JsonResponse:
+    """POST /api/channels/<channel_id>/meta/campaigns/status/"""
+    channel = _get_user_channel(request, channel_id)
+    body = json.loads(request.body)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.update_campaign_status(
+        campaign_id=body.get("campaign_id", ""),
+        status=body.get("status", "PAUSED"),
+    ))
+
+
+@login_required
+@require_GET
+def meta_ad_sets(request, channel_id: int) -> JsonResponse:
+    """GET /api/channels/<channel_id>/meta/ad-sets/?campaign_id=X"""
+    channel = _get_user_channel(request, channel_id)
+    campaign_id = request.GET.get("campaign_id")
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.list_ad_sets(campaign_id=campaign_id))
+
+
+@login_required
+@require_POST
+def meta_create_ad_set(request, channel_id: int) -> JsonResponse:
+    """POST /api/channels/<channel_id>/meta/ad-sets/create/"""
+    channel = _get_user_channel(request, channel_id)
+    body = json.loads(request.body)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.create_ad_set(
+        campaign_id=body.get("campaign_id", ""),
+        name=body.get("name", ""),
+        daily_budget_brl=float(body.get("daily_budget_brl", 20.0)),
+        billing_event=body.get("billing_event", "IMPRESSIONS"),
+        optimization_goal=body.get("optimization_goal", "LINK_CLICKS"),
+        targeting=body.get("targeting"),
+        status=body.get("status", "PAUSED"),
+        start_time=body.get("start_time"),
+    ))
+
+
+@login_required
+@require_POST
+def meta_update_ad_set_status(request, channel_id: int) -> JsonResponse:
+    """POST /api/channels/<channel_id>/meta/ad-sets/status/"""
+    channel = _get_user_channel(request, channel_id)
+    body = json.loads(request.body)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.update_ad_set_status(
+        ad_set_id=body.get("ad_set_id", ""),
+        status=body.get("status", "PAUSED"),
+    ))
+
+
+@login_required
+@require_GET
+def meta_ads_list(request, channel_id: int) -> JsonResponse:
+    """GET /api/channels/<channel_id>/meta/ads/?ad_set_id=X"""
+    channel = _get_user_channel(request, channel_id)
+    ad_set_id = request.GET.get("ad_set_id")
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.list_ads(ad_set_id=ad_set_id))
+
+
+@login_required
+@require_POST
+def meta_create_ad(request, channel_id: int) -> JsonResponse:
+    """POST /api/channels/<channel_id>/meta/ads/create/"""
+    channel = _get_user_channel(request, channel_id)
+    body = json.loads(request.body)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.create_ad(
+        ad_set_id=body.get("ad_set_id", ""),
+        name=body.get("name", ""),
+        creative_id=body.get("creative_id"),
+        page_id=body.get("page_id"),
+        link_url=body.get("link_url"),
+        message=body.get("message"),
+        image_hash=body.get("image_hash"),
+        status=body.get("status", "PAUSED"),
+    ))
+
+
+@login_required
+@require_GET
+def meta_creatives(request, channel_id: int) -> JsonResponse:
+    """GET /api/channels/<channel_id>/meta/creatives/"""
+    channel = _get_user_channel(request, channel_id)
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.list_creatives())
+
+
+@login_required
+@require_GET
+def meta_campaign_insights(request, channel_id: int) -> JsonResponse:
+    """GET /api/channels/<channel_id>/meta/insights/?campaign_id=X&days=30"""
+    channel = _get_user_channel(request, channel_id)
+    campaign_id = request.GET.get("campaign_id")
+    days = int(request.GET.get("days", 30))
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.get_campaign_insights(campaign_id=campaign_id, days=days))
+
+
+@login_required
+@require_GET
+def meta_ad_set_insights(request, channel_id: int) -> JsonResponse:
+    """GET /api/channels/<channel_id>/meta/ad-set-insights/?ad_set_id=X&days=30"""
+    channel = _get_user_channel(request, channel_id)
+    ad_set_id = request.GET.get("ad_set_id", "")
+    days = int(request.GET.get("days", 30))
+    mgr = _get_meta_manager(channel)
+    return JsonResponse(mgr.get_ad_set_insights(ad_set_id=ad_set_id, days=days))
