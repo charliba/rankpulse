@@ -13,6 +13,7 @@ urlpatterns = [
 
     # ── Google Ads OAuth (channel-scoped) ────────────────────
     path("<int:channel_id>/oauth/google-ads/start/", views.google_ads_oauth_start, name="google_ads_oauth_start"),
+    path("oauth/google-ads/callback/", views.google_ads_oauth_callback, name="google_ads_oauth_callback"),
     path("<int:channel_id>/oauth/google-ads/exchange/", views.google_ads_oauth_exchange, name="google_ads_oauth_exchange"),
     path("<int:channel_id>/oauth/google-ads/test/", views.google_ads_test_connection, name="google_ads_test_connection"),
 

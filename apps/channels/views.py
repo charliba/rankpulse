@@ -103,6 +103,7 @@ def channel_credentials(request, channel_id: int):
         "channel": channel,
         "project": channel.project,
         "form": form,
+        "cred": cred,
         "is_configured": channel.is_configured,
     })
 
@@ -128,18 +129,19 @@ GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token"
 
 @login_required
 def google_ads_oauth_start(request, channel_id: int):
-    """Generate the Google OAuth2 authorization URL for a channel."""
+    """Redirect user to Google OAuth2 authorization for Google Ads access."""
     channel = _get_user_channel(request, channel_id)
     cred = getattr(channel, "credentials", None)
 
-    client_id = cred.client_id if cred else ""
+    # Use platform-level credentials from settings, fall back to per-channel
+    client_id = settings.GOOGLE_ADS_CLIENT_ID or (cred.client_id if cred else "")
     if not client_id:
-        return JsonResponse(
-            {"error": "Preencha o OAuth Client ID antes de gerar o token."},
-            status=400,
-        )
+        messages.error(request, "OAuth Client ID não configurado.")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
 
-    redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+    app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
+    redirect_uri = f"https://app.{app_domain}/channels/oauth/google-ads/callback/"
+
     params = {
         "client_id": client_id,
         "redirect_uri": redirect_uri,
@@ -147,10 +149,83 @@ def google_ads_oauth_start(request, channel_id: int):
         "response_type": "code",
         "access_type": "offline",
         "prompt": "consent",
+        "state": str(channel.pk),
     }
 
     auth_url = f"{GOOGLE_AUTH_URI}?{urllib.parse.urlencode(params)}"
-    return JsonResponse({"auth_url": auth_url})
+    return redirect(auth_url)
+
+
+@login_required
+def google_ads_oauth_callback(request):
+    """Handle Google OAuth2 callback — exchange code for refresh token."""
+    code = request.GET.get("code", "")
+    error = request.GET.get("error", "")
+    state = request.GET.get("state", "")
+
+    if not state:
+        messages.error(request, "Parâmetro state ausente no callback do Google.")
+        return redirect("core:dashboard")
+
+    channel_id = int(state)
+    channel = _get_user_channel(request, channel_id)
+
+    if error:
+        messages.error(request, f"Google OAuth negado: {error}")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    if not code:
+        messages.error(request, "Código de autorização não recebido do Google.")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    import requests as http_requests
+
+    cred, _ = ChannelCredential.objects.get_or_create(channel=channel)
+    client_id = settings.GOOGLE_ADS_CLIENT_ID or cred.client_id
+    client_secret = settings.GOOGLE_ADS_CLIENT_SECRET or cred.client_secret
+
+    app_domain = os.environ.get("APP_DOMAIN", "rankpulse.cloud")
+    redirect_uri = f"https://app.{app_domain}/channels/oauth/google-ads/callback/"
+
+    try:
+        resp = http_requests.post(
+            GOOGLE_TOKEN_URI,
+            data={
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+            },
+            timeout=30,
+        )
+        token_data = resp.json()
+    except Exception as exc:
+        logger.exception("Google OAuth token exchange failed")
+        messages.error(request, f"Erro ao contatar o Google: {exc}")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    if "error" in token_data:
+        error_desc = token_data.get("error_description", token_data["error"])
+        messages.error(request, f"Google retornou erro: {error_desc}")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    refresh_token = token_data.get("refresh_token", "")
+    if not refresh_token:
+        messages.error(request, "Google não retornou refresh_token. Tente novamente.")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    # Save credentials
+    if not cred.client_id:
+        cred.client_id = client_id
+    if not cred.client_secret:
+        cred.client_secret = client_secret
+    cred.refresh_token = refresh_token
+    cred.save(update_fields=["client_id", "client_secret", "refresh_token"])
+
+    logger.info("Google Ads refresh token saved for channel %s (pk=%d)", channel.name, channel.pk)
+    messages.success(request, "Google Ads conectado com sucesso! Refresh Token salvo.")
+    return redirect("channels:channel_credentials", channel_id=channel.pk)
 
 
 @login_required
