@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Selecionar Propriedade GA4 — {{ site.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-4">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="{% url 'core:dashboard' %}" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+        <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <a href="{% url 'core:site_detail' site.pk %}" class="hover:text-indigo-600 transition-colors">{{ site.name }}</a>
+        <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-gray-900 font-medium">Selecionar Propriedade GA4</span>
+    </nav>
+
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Selecionar Propriedade GA4</h1>
+    <p class="text-gray-500 mb-8">Google conectado! Escolha qual propriedade do Analytics usar com <strong>{{ site.name }}</strong>.</p>
+
+    {% if error_msg %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+        <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="text-sm text-amber-800">{{ error_msg }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if properties %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" id="selected_measurement_id" name="measurement_id" value="{{ site.ga4_measurement_id|default:'' }}">
+        <div class="space-y-3 mb-8">
+            {% for prop in properties %}
+            <label class="flex items-center gap-4 p-4 bg-white rounded-xl border-2 cursor-pointer transition-all hover:border-indigo-300
+                          {% if prop.id == site.ga4_property_id %}border-indigo-500 ring-2 ring-indigo-100{% else %}border-gray-200{% endif %}">
+                <input type="radio" name="property_id" value="{{ prop.id }}"
+                       data-measurement-id="{{ prop.measurement_id|default:'' }}"
+                       {% if prop.id == site.ga4_property_id %}checked{% endif %}
+                       class="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                       onchange="document.getElementById('selected_measurement_id').value = this.dataset.measurementId">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <p class="text-gray-900 font-medium">{{ prop.name }}</p>
+                        {% if prop.account %}
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">{{ prop.account }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-3 mt-1">
+                        <p class="text-gray-400 text-sm font-mono">{{ prop.id }}</p>
+                        {% if prop.measurement_id %}
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 font-medium">{{ prop.measurement_id }}</span>
+                        {% endif %}
+                        {% if prop.stream_url %}
+                        <span class="text-xs text-gray-400 truncate">{{ prop.stream_url }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button type="submit"
+                    class="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-sm">
+                Confirmar Propriedade
+            </button>
+            <a href="{% url 'core:site_integrations' site_id=site.pk %}"
+               class="text-gray-500 hover:text-gray-700 transition-colors text-sm">
+                Cancelar
+            </a>
+        </div>
+    </form>
+    {% elif not error_msg %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+        <div class="flex items-start gap-3">
+            <svg class="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div>
+                <p class="font-semibold text-amber-900">Nenhuma propriedade GA4 encontrada</p>
+                <p class="text-sm text-amber-700 mt-1">
+                    Sua conta Google não tem acesso a propriedades do Analytics.
+                    <a href="https://analytics.google.com" target="_blank" class="underline font-medium">Acesse analytics.google.com</a> para criar uma.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-6">
+        <a href="{% url 'core:site_integrations' site_id=site.pk %}"
+           class="text-indigo-600 hover:text-indigo-800 transition-colors text-sm">
+            ← Voltar às integrações
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+<!-- Meta Ad Sets breakdown — loaded via HTMX inside campaign row -->
+{% if data.error %}
+<tr>
+    <td colspan="8" class="px-4 py-3">
+        <p class="text-xs text-red-400">Erro ao carregar conjuntos: {{ data.error|truncatechars:100 }}</p>
+    </td>
+</tr>
+{% elif not data.ad_sets %}
+<tr>
+    <td colspan="8" class="px-4 py-3">
+        <p class="text-xs text-gray-400 text-center">Nenhum conjunto de anúncios nesta campanha.</p>
+    </td>
+</tr>
+{% else %}
+{% for s in data.ad_sets %}
+<tr class="bg-blue-50/40 border-l-2 border-blue-300">
+    <td class="px-3 py-2 pl-10">
+        <div class="text-xs text-gray-700 truncate max-w-[220px]" title="{{ s.name }}">
+            <span class="text-blue-500 mr-1">↳</span>{{ s.name }}
+        </div>
+        <span class="text-[10px] text-gray-400">{{ s.optimization_goal }}</span>
+    </td>
+    <td class="px-3 py-2 text-center">
+        {% if s.status == 'ACTIVE' %}
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-green-50 text-green-700 rounded-full">
+            <span class="w-1 h-1 rounded-full bg-green-500"></span>Ativo
+        </span>
+        {% elif s.status == 'PAUSED' %}
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-yellow-50 text-yellow-700 rounded-full">
+            <span class="w-1 h-1 rounded-full bg-yellow-500"></span>Pausado
+        </span>
+        {% else %}
+        <span class="text-[10px] text-gray-400">{{ s.status }}</span>
+        {% endif %}
+    </td>
+    <td class="px-3 py-2 text-right font-mono text-xs text-gray-600">R$ {{ s.spend|floatformat:2 }}</td>
+    <td class="px-3 py-2 text-right text-xs text-gray-500">{{ s.reach|default:"0" }}</td>
+    <td class="px-3 py-2 text-right text-xs text-gray-500">{{ s.impressions|default:"0" }}</td>
+    <td class="px-3 py-2 text-right text-xs text-gray-500">{{ s.clicks|default:"0" }}</td>
+    <td class="px-3 py-2 text-right text-xs text-gray-500">{{ s.ctr|floatformat:2 }}%</td>
+    <td class="px-3 py-2 text-right font-mono text-xs text-gray-500">R$ {{ s.cpc|floatformat:2 }}</td>
+</tr>
+{% endfor %}
+{% endif %}

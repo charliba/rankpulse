@@ -1,0 +1,191 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin{% endblock %} — RankPulse Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        'primary-dark': '#4f46e5',
+                        'primary-light': '#a5b4fc',
+                        sidebar: '#0f172a',
+                        accent: '#06b6d4',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"
+            integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+            crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>[x-cloak]{display:none !important}</style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="h-full bg-gray-50" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' x-data="{ sidebarOpen: false }">
+    <div class="flex h-full">
+
+        <!-- Mobile sidebar toggle -->
+        <button @click="sidebarOpen = !sidebarOpen"
+                class="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-sidebar text-white shadow-lg">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+        </button>
+
+        <!-- Overlay (mobile) -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false"
+             class="lg:hidden fixed inset-0 bg-black/50 z-40" x-cloak></div>
+
+        <!-- Admin Sidebar -->
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+               class="fixed lg:static inset-y-0 left-0 z-40 w-64 bg-sidebar text-white flex flex-col transition-transform duration-200">
+
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-700">
+                <a href="{% url 'core:admin_overview' %}" class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-lg font-bold">RankPulse</span>
+                        <span class="block text-xs text-red-400 font-semibold">ADMIN PANEL</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+
+                <p class="px-4 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Principal</p>
+
+                <a href="{% url 'core:admin_overview' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
+                          {% if admin_page == 'overview' %}bg-primary/20 text-primary-light font-medium{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                    </svg>
+                    Visão Geral
+                </a>
+
+                <div class="my-3 border-t border-gray-700/40"></div>
+                <p class="px-4 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Gestão</p>
+
+                <a href="{% url 'core:admin_users' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
+                          {% if admin_page == 'users' %}bg-primary/20 text-primary-light font-medium{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    Usuários
+                    <span class="ml-auto bg-gray-700 text-gray-300 text-xs font-medium px-2 py-0.5 rounded-full">{{ admin_user_count|default:"" }}</span>
+                </a>
+
+                <a href="{% url 'core:admin_projects' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
+                          {% if admin_page == 'projects' %}bg-primary/20 text-primary-light font-medium{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                    </svg>
+                    Projetos
+                </a>
+
+                <a href="{% url 'core:admin_audits' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
+                          {% if admin_page == 'audits' %}bg-primary/20 text-primary-light font-medium{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                    Auditorias
+                </a>
+
+                <div class="my-3 border-t border-gray-700/40"></div>
+                <p class="px-4 pb-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Monitoramento</p>
+
+                <a href="{% url 'core:admin_errors' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
+                          {% if admin_page == 'errors' %}bg-red-500/20 text-red-400 font-medium{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.73 0L4.07 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                    Error Logs
+                    {% if unresolved_error_count %}
+                    <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ unresolved_error_count }}</span>
+                    {% endif %}
+                </a>
+
+                <a href="{% url 'core:admin_system' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
+                          {% if admin_page == 'system' %}bg-primary/20 text-primary-light font-medium{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                    </svg>
+                    Sistema
+                </a>
+
+                <a href="{% url 'chat_support:feedback_panel' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm
+                          {% if admin_page == 'feedback' %}bg-primary/20 text-primary-light font-medium{% else %}text-gray-300 hover:bg-gray-800 hover:text-white{% endif %}">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                    </svg>
+                    Feedback & Bugs
+                </a>
+
+                <div class="my-3 border-t border-gray-700/40"></div>
+
+                <a href="{% url 'core:dashboard' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm text-gray-400 hover:bg-gray-800 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+                    </svg>
+                    Voltar ao App
+                </a>
+
+                <a href="{% url 'admin:index' %}"
+                   class="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm text-gray-400 hover:bg-gray-800 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                    </svg>
+                    Django Admin
+                </a>
+            </nav>
+
+            <!-- User info -->
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center gap-3 px-4 py-2">
+                    <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-sm font-bold">
+                        {{ user.username|first|upper }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate">{{ user.username }}</p>
+                        <p class="text-xs text-red-400">Administrador</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="flex-1 overflow-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

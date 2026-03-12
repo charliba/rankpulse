@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Error Logs — Developer Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto" x-data="{ expandedId: null }">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Error Logs</h1>
+            <p class="text-sm text-gray-500 mt-1">Monitoramento de erros do sistema e reports de usuários</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 uppercase font-semibold">Erros (24h)</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ total_24h }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 uppercase font-semibold">Não Resolvidos</p>
+            <p class="text-2xl font-bold text-red-500 mt-1">{{ unresolved }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 uppercase font-semibold">Tipo Mais Comum</p>
+            <p class="text-lg font-semibold text-gray-900 dark:text-white mt-1">{{ most_common|default:"—" }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 uppercase font-semibold">Total Filtrado</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ total }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="bg-white dark:bg-gray-800 rounded-xl p-4 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div>
+                <label class="text-xs text-gray-500 font-medium">Tipo</label>
+                <select name="error_type" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
+                    <option value="">Todos</option>
+                    {% for val, label in error_type_choices %}
+                    <option value="{{ val }}" {% if f_error_type == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 font-medium">Severidade</label>
+                <select name="severity" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
+                    <option value="">Todas</option>
+                    {% for val, label in severity_choices %}
+                    <option value="{{ val }}" {% if f_severity == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 font-medium">Status</label>
+                <select name="resolved" class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
+                    <option value="">Todos</option>
+                    <option value="no" {% if f_resolved == "no" %}selected{% endif %}>Não Resolvidos</option>
+                    <option value="yes" {% if f_resolved == "yes" %}selected{% endif %}>Resolvidos</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 font-medium">De</label>
+                <input type="date" name="date_from" value="{{ f_date_from }}"
+                       class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
+            </div>
+            <div>
+                <label class="text-xs text-gray-500 font-medium">Até</label>
+                <input type="date" name="date_to" value="{{ f_date_to }}"
+                       class="mt-1 w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors">
+                    Filtrar
+                </button>
+                <a href="{% url 'core:error_dashboard' %}" class="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">Limpar</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Error Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        {% if errors %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 dark:bg-gray-700/50 text-xs text-gray-500 uppercase">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Data/Hora</th>
+                        <th class="px-4 py-3 text-left">Severidade</th>
+                        <th class="px-4 py-3 text-left">Tipo</th>
+                        <th class="px-4 py-3 text-left">Mensagem</th>
+                        <th class="px-4 py-3 text-left">URL</th>
+                        <th class="px-4 py-3 text-left">Usuário</th>
+                        <th class="px-4 py-3 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    {% for err in errors %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer transition-colors"
+                        @click="expandedId = expandedId === {{ err.pk }} ? null : {{ err.pk }}">
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                            {{ err.timestamp|date:"d/m H:i:s" }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                {% if err.severity == 'critical' %}bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400
+                                {% elif err.severity == 'error' %}bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400
+                                {% elif err.severity == 'warning' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400
+                                {% else %}bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">
+                                {{ err.get_severity_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-600 dark:text-gray-300">
+                                {{ err.get_error_type_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-800 dark:text-gray-200 max-w-xs truncate" title="{{ err.error_message }}">
+                            {{ err.error_message|truncatechars:80 }}
+                        </td>
+                        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 max-w-[200px] truncate font-mono text-xs" title="{{ err.url_path }}">
+                            <span class="text-gray-400">{{ err.http_method }}</span> {{ err.url_path|truncatechars:40 }}
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                            {{ err.user.username|default:"—" }}
+                        </td>
+                        <td class="px-4 py-3 text-center">
+                            <button @click.stop="fetch('{% url 'core:error_resolve' err.pk %}', {method:'POST', headers:{'X-CSRFToken':'{{ csrf_token }}'}}).then(r=>r.json()).then(d=>{if(d.success) $el.closest('tr').classList.toggle('opacity-50')})"
+                                    class="text-xs px-2 py-1 rounded transition-colors
+                                           {% if err.resolved %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400{% else %}bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-700 dark:bg-gray-600 dark:text-gray-300{% endif %}">
+                                {% if err.resolved %}Resolvido{% else %}Resolver{% endif %}
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Expanded Detail Row -->
+                    <tr x-show="expandedId === {{ err.pk }}" x-collapse x-cloak>
+                        <td colspan="7" class="px-6 py-4 bg-gray-50 dark:bg-gray-700/20 border-t border-gray-100 dark:border-gray-700">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <!-- Traceback -->
+                                <div>
+                                    <h4 class="text-xs font-semibold text-gray-500 uppercase mb-2">Traceback</h4>
+                                    <pre class="bg-gray-900 text-green-400 text-xs p-3 rounded-lg overflow-auto max-h-64 font-mono">{{ err.traceback|default:"Sem traceback disponível" }}</pre>
+                                </div>
+                                <!-- Details -->
+                                <div class="space-y-3">
+                                    <div>
+                                        <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">View Name</h4>
+                                        <p class="text-sm text-gray-700 dark:text-gray-300 font-mono">{{ err.view_name|default:"—" }}</p>
+                                    </div>
+                                    {% if err.request_body %}
+                                    <div>
+                                        <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">Request Body (sanitizado)</h4>
+                                        <pre class="bg-gray-100 dark:bg-gray-700 text-xs p-2 rounded overflow-auto max-h-32 font-mono">{{ err.request_body }}</pre>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">User Agent</h4>
+                                        <p class="text-xs text-gray-500 font-mono">{{ err.user_agent|default:"—"|truncatechars:120 }}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">Session Key</h4>
+                                        <p class="text-xs text-gray-500 font-mono">{{ err.session_key|default:"—" }}</p>
+                                    </div>
+                                    <!-- Developer Notes -->
+                                    <div x-data="{ notes: '{{ err.developer_notes|escapejs }}', saving: false }">
+                                        <h4 class="text-xs font-semibold text-gray-500 uppercase mb-1">Notas do Desenvolvedor</h4>
+                                        <textarea x-model="notes" rows="3"
+                                                  class="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 resize-none"></textarea>
+                                        <button @click="saving=true; fetch('{% url 'core:error_update_notes' err.pk %}', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'}, body:JSON.stringify({developer_notes:notes})}).then(r=>r.json()).then(d=>{saving=false})"
+                                                :disabled="saving"
+                                                class="mt-1 px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors disabled:opacity-50">
+                                            <span x-text="saving ? 'Salvando...' : 'Salvar Notas'"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <p class="text-sm text-gray-500">
+                Página {{ page }} de {{ total_pages }} ({{ total }} erros)
+            </p>
+            <div class="flex gap-1">
+                {% if page > 1 %}
+                <a href="?page={{ page|add:"-1" }}&error_type={{ f_error_type }}&severity={{ f_severity }}&resolved={{ f_resolved }}&date_from={{ f_date_from }}&date_to={{ f_date_to }}"
+                   class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    &laquo;
+                </a>
+                {% endif %}
+                {% for p in page_range %}
+                <a href="?page={{ p }}&error_type={{ f_error_type }}&severity={{ f_severity }}&resolved={{ f_resolved }}&date_from={{ f_date_from }}&date_to={{ f_date_to }}"
+                   class="px-3 py-1 text-sm rounded border transition-colors
+                          {% if p == page %}bg-indigo-600 text-white border-indigo-600{% else %}border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                    {{ p }}
+                </a>
+                {% endfor %}
+                {% if page < total_pages %}
+                <a href="?page={{ page|add:"1" }}&error_type={{ f_error_type }}&severity={{ f_severity }}&resolved={{ f_resolved }}&date_from={{ f_date_from }}&date_to={{ f_date_to }}"
+                   class="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    &raquo;
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="p-12 text-center">
+            <svg class="w-16 h-16 text-green-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-gray-500 text-lg">Nenhum erro encontrado</p>
+            <p class="text-gray-400 text-sm mt-1">Sistema funcionando normalmente!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

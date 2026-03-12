@@ -105,3 +105,84 @@ class GeneratedPost(models.Model):
     def __str__(self) -> str:
         status = "✅" if self.is_approved else "⬜"
         return f"{status} {self.title}"
+
+
+class SocialPost(models.Model):
+    """AI-generated social media post (BestContent-style)."""
+
+    PLATFORM_CHOICES = [
+        ("instagram_feed", "Instagram Feed"),
+        ("instagram_stories", "Instagram Stories"),
+        ("instagram_reels", "Instagram Reels"),
+        ("facebook", "Facebook"),
+        ("linkedin", "LinkedIn"),
+        ("tiktok", "TikTok"),
+    ]
+
+    STATUS_CHOICES = [
+        ("draft", "Rascunho"),
+        ("review", "Em Revisão"),
+        ("approved", "Aprovado"),
+        ("scheduled", "Agendado"),
+        ("published", "Publicado"),
+        ("rejected", "Rejeitado"),
+    ]
+
+    project = models.ForeignKey(
+        "core.Project", on_delete=models.CASCADE, related_name="social_posts",
+    )
+    platform = models.CharField(max_length=30, choices=PLATFORM_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+
+    # Content
+    theme = models.CharField(max_length=300, verbose_name="Tema / Assunto")
+    caption = models.TextField(verbose_name="Legenda / Copy")
+    hashtags = models.TextField(blank=True, verbose_name="Hashtags")
+    cta = models.CharField(max_length=300, blank=True, verbose_name="Call-to-Action")
+
+    # Visual
+    image_prompt = models.TextField(blank=True, verbose_name="Prompt da Imagem")
+    image_url = models.URLField(blank=True, verbose_name="URL da Imagem Gerada")
+    image_file = models.ImageField(upload_to="social_images/", blank=True)
+
+    # AI metadata
+    model_used = models.CharField(max_length=80, blank=True)
+    generation_params = models.JSONField(default=dict, blank=True)
+
+    # Scheduling
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Post Social"
+        verbose_name_plural = "Posts Sociais"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"[{self.get_platform_display()}] {self.theme[:60]}"
+
+
+class ContentCalendar(models.Model):
+    """Weekly content plan entry — ties SocialPosts to dates."""
+
+    project = models.ForeignKey(
+        "core.Project", on_delete=models.CASCADE, related_name="calendar_entries",
+    )
+    post = models.ForeignKey(
+        SocialPost, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="calendar_entries",
+    )
+    date = models.DateField()
+    time_slot = models.TimeField(null=True, blank=True)
+    notes = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        verbose_name = "Entrada Calendário"
+        verbose_name_plural = "Calendário de Conteúdo"
+        ordering = ["date", "time_slot"]
+
+    def __str__(self) -> str:
+        return f"{self.date} — {self.post or self.notes}"

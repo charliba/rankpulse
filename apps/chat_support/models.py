@@ -103,3 +103,88 @@ class ChatSettings(models.Model):
         """Retorna o registro singleton, criando se necessário."""
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class FeedbackLog(models.Model):
+    """User feedback & bug reports submitted via Aura widget."""
+
+    CATEGORY_CHOICES = [
+        ("bug", "Bug"),
+        ("feature", "Sugestão"),
+        ("ux", "Usabilidade"),
+        ("performance", "Performance"),
+        ("other", "Outro"),
+    ]
+    STATUS_CHOICES = [
+        ("new", "Novo"),
+        ("approved", "Aprovado"),
+        ("in_progress", "Em Análise"),
+        ("resolved", "Resolvido"),
+        ("rejected", "Rejeitado"),
+        ("closed", "Fechado"),
+    ]
+    PRIORITY_CHOICES = [
+        ("low", "Baixa"),
+        ("medium", "Média"),
+        ("high", "Alta"),
+        ("critical", "Crítica"),
+    ]
+
+    user = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="feedback_logs",
+    )
+    chat_session = models.ForeignKey(
+        ChatSession,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="feedback_logs",
+    )
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="bug")
+    email = models.EmailField(max_length=254, blank=True, help_text="E-mail do remetente (útil para anônimos)")
+    title = models.CharField(max_length=300)
+    description = models.TextField()
+    page_url = models.URLField(max_length=500, blank=True)
+    screenshot = models.ImageField(upload_to="feedback/%Y/%m/", blank=True)
+    chat_transcript = models.TextField(blank=True, help_text="Últimas mensagens do chat ao reportar")
+    user_agent = models.CharField(max_length=500, blank=True)
+    error_context = models.JSONField(default=dict, blank=True, help_text="Contexto extra do erro (URL, traceback, etc.)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="medium")
+    developer_notes = models.TextField(blank=True)
+    resolution_notes = models.TextField(blank=True, verbose_name="Solução Aplicada")
+    archived_at = models.DateTimeField(null=True, blank=True, verbose_name="Arquivado em")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Feedback"
+        verbose_name_plural = "Feedbacks"
+
+    def __str__(self) -> str:
+        return f"[{self.get_category_display()}] {self.title}"
+
+
+class FeedbackImage(models.Model):
+    """Image attachment for a FeedbackLog entry (supports multiple images)."""
+
+    feedback = models.ForeignKey(
+        FeedbackLog,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image = models.ImageField(upload_to="feedback/%Y/%m/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        verbose_name = "Imagem de Feedback"
+        verbose_name_plural = "Imagens de Feedback"
+
+    def __str__(self) -> str:
+        return f"Image for Feedback #{self.feedback_id}"

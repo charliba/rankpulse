@@ -17,7 +17,7 @@
 | **Caminho** | `/root/rankpulse` |
 | **Web Server** | Nginx (porta 80/443) → Gunicorn (porta 8002) |
 | **Python** | venv em `/root/rankpulse/venv` |
-| **Database** | PostgreSQL (`rankpulse` em `localhost:5432`) |
+| **Database** | SQLite (`/root/rankpulse/db.sqlite3`) |
 | **Static** | `/root/rankpulse/staticfiles` |
 | **Git Branch** | `main` |
 
@@ -49,7 +49,7 @@ python deploy.py
 | # | Etapa | Descrição |
 |---|-------|-----------|
 | 1 | **SSH Connect** | Conecta via Paramiko usando `.env` |
-| 1.5 | **Backup DB** | `pg_dump` PostgreSQL (mantém últimos 10) |
+| 1.5 | **Backup DB** | Cópia do SQLite (mantém últimos 10) |
 | 1.6 | **Backup Code** | `tar.gz` do projeto (mantém últimos 5) |
 | 2 | **Upload Code** | Transfere arquivos Python via SFTP recursivo |
 | 3 | **Upload .env** | Transfere `.env` local |
@@ -85,11 +85,10 @@ Internet
 └──────────┘   └──────────┘
     │                 │
     ▼                 ▼
-┌────────────────────────┐
-│   PostgreSQL           │
-│   ├── beezle (DB)      │
-│   └── rankpulse (DB)   │
-└────────────────────────┘
+┌────────────┐   ┌───────────┐
+│ PostgreSQL │   │  SQLite   │
+│  beezle    │   │ rankpulse │
+└────────────┘   └───────────┘
 ```
 
 ---
@@ -102,7 +101,7 @@ Internet
 | `python restart_gunicorn.py` | Reiniciar Gunicorn sem deploy |
 | `python setup_nginx.py` | Configurar Nginx (primeira vez) |
 | `python _setup_ssl.py` | Gerar certificado SSL (certbot) |
-| `python setup_postgresql.py` | Instalar/criar banco PostgreSQL |
+| `python setup_postgresql.py` | *(legacy — não necessário, usa SQLite)* |
 | `python verify_site.py` | Verificar saúde do servidor |
 
 ### Ordem para primeiro deploy:
@@ -143,6 +142,9 @@ python verify_site.py
 ```powershell
 python restart_gunicorn.py
 ```
+> **NOTA (Mar/2026):** Se o `restart_gunicorn.py` não resolver, pode ser race condition:
+> o `pkill gunicorn` nem sempre libera a porta 8002 imediatamente. Nesse caso,
+> mate com `fuser -k 8002/tcp`, aguarde 3-5 segundos, e reinicie.
 
 ### SSH trava pedindo senha
 ```powershell
@@ -168,4 +170,4 @@ c.close()
 
 ---
 
-**Última atualização:** Fevereiro 2026
+**Última atualização:** Março 2026

@@ -1,7 +1,7 @@
 """Admin do chat de suporte Aura."""
 from django.contrib import admin
 
-from .models import ChatMessage, ChatSession, ChatSettings
+from .models import ChatMessage, ChatSession, ChatSettings, FeedbackLog
 
 
 class ChatMessageInline(admin.TabularInline):
@@ -47,3 +47,11 @@ class ChatSettingsAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None) -> bool:
         return False
+
+
+@admin.register(FeedbackLog)
+class FeedbackLogAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "priority", "status", "user", "created_at")
+    list_filter = ("category", "status", "priority", "created_at")
+    search_fields = ("title", "description", "user__username")
+    readonly_fields = ("created_at", "updated_at", "chat_transcript", "user_agent", "error_context")

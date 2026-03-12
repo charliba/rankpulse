@@ -1,0 +1,65 @@
+{% load custom_filters %}<!-- Meta Ads Card Partial — loaded via HTMX -->
+{% if not data.connected %}
+<div class="text-center py-4">
+    <p class="text-sm text-gray-400">Meta Ads não conectado.</p>
+    <a href="{% url 'core:project_sources' project.id %}" class="text-xs text-primary hover:underline mt-1 inline-block">Configurar Fontes</a>
+</div>
+{% elif data.error %}
+<div class="text-center py-4">
+    <p class="text-sm text-red-400">Erro ao carregar dados.</p>
+    <p class="text-xs text-gray-400 mt-1">{{ data.error|truncatechars:80 }}</p>
+</div>
+{% else %}
+<div class="space-y-4">
+    <div class="grid grid-cols-2 gap-3">
+        <div>
+            <p class="text-xs text-gray-500">Gasto ({{ data.days }}d)</p>
+            <p class="text-lg font-bold text-gray-900">R$ {{ data.spend|floatformat:2 }}</p>
+            {% if data.spend_prev > 0 %}
+            <p class="text-xs {% if data.spend < data.spend_prev %}text-green-600{% else %}text-red-500{% endif %}">
+                vs R$ {{ data.spend_prev|floatformat:2 }} anterior
+            </p>
+            {% endif %}
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">Alcance</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.reach }}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">Impressões</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.impressions }}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">Cliques</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.clicks }}</p>
+            {% if data.clicks_prev > 0 %}
+            <p class="text-xs {% if data.clicks > data.clicks_prev %}text-green-600{% else %}text-red-500{% endif %}">
+                vs {{ data.clicks_prev }} anterior
+            </p>
+            {% endif %}
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">CTR / CPC</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.ctr }}% · R$ {{ data.cpc|floatformat:2 }}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">CPM</p>
+            <p class="text-lg font-bold text-gray-900">R$ {{ data.cpm|floatformat:2 }}</p>
+        </div>
+    </div>
+    <div class="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+        <span class="flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-green-400"></span>
+            {{ data.campaigns_active }} campanhas ativas
+        </span>
+        {% if data.fetched_at %}
+        <span class="text-gray-300">{{ data.fetched_at }}</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- JSON bridge for Alpine.js dashboard -->
+<script data-card-json type="application/json">
+{{ data|meta_card_json }}
+</script>

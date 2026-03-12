@@ -1,19 +1,31 @@
 # 📊 SCHEMA.md — Modelos do Banco de Dados
 
-> Schema completo do RankPulse. Atualizado em Fevereiro 2026.
+> Schema completo do RankPulse. Atualizado em Março 2026.
 
 ---
 
 ## Apps e Modelos
 
-### `apps.core` — Nucleo
+### `apps.core` — Núcleo
 
-| Modelo | Descricao |
+| Modelo | Descrição |
 |--------|-----------|
-| `Site` | Website gerenciado (GA4, GSC, Google Ads, SEO config) |
-| `GA4EventDefinition` | Definicao de evento GA4 (nome, JS snippet, server-side) |
-| `KPIGoal` | Meta de KPI por periodo (mes 1/3/6/12) |
-| `WeeklySnapshot` | Snapshot semanal de metricas (sessions, signups, GSC) |
+| `Project` | Projeto (contém sites e canais) |
+| `Site` | Website gerenciado (GA4, GSC, SEO config) |
+| `GA4EventDefinition` | Definição de evento GA4 (nome, JS snippet, server-side) |
+| `KPIGoal` | Meta de KPI por período (mês 1/3/6/12) |
+| `WeeklySnapshot` | Snapshot semanal de métricas (sessions, signups, GSC) |
+| `AlertRule` | Regra de alerta (métrica, condição, threshold) |
+| `AlertEvent` | Evento disparado por regra de alerta |
+| `AuditReport` | Relatório de auditoria IA (score 0-100, análise, snapshot) |
+| `AuditRecommendation` | Recomendação de auditoria (plataforma, categoria, impacto, ação auto-aplicável) |
+
+### `apps.channels` — Canais de Tráfego
+
+| Modelo | Descrição |
+|--------|-----------|
+| `Channel` | Canal de tráfego (google_ads, meta_ads) com flag ativo |
+| `ChannelCredential` | Credenciais por canal (customer_id, OAuth tokens, ad account IDs) |
 
 #### Campos Google Ads no modelo `Site`:
 | Campo | Tipo | Descricao |
@@ -66,6 +78,11 @@
 ## Relações Principais
 
 ```
+Project ──┬── Site (1:N)
+          ├── AlertRule ──── AlertEvent (1:N)
+          ├── AuditReport ──── AuditRecommendation (1:N)
+          └── Channel ──── ChannelCredential (1:N)
+
 Site ──┬── GA4EventDefinition (1:N)
        ├── KPIGoal (1:N)
        ├── WeeklySnapshot (1:N)
@@ -83,4 +100,37 @@ ChecklistTemplate ──── ChecklistInstance (1:N)
 
 ---
 
-**Última atualização:** Fevereiro 2026
+## Detalhes: AuditReport
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `project` | FK → Project | Projeto auditado |
+| `status` | CharField | running / done / error |
+| `business_summary` | TextField | Resumo do negócio (scraping do site) |
+| `overall_score` | IntegerField | Score 0-100 |
+| `overall_analysis` | TextField | Análise geral da IA |
+| `raw_data_snapshot` | JSONField | Quantidades de dados analisados |
+| `error_message` | TextField | Mensagem de erro (se houver) |
+| `duration_seconds` | FloatField | Tempo de execução |
+
+## Detalhes: AuditRecommendation
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `report` | FK → AuditReport | Relatório pai |
+| `platform` | CharField | google_ads / meta_ads / seo / general |
+| `category` | CharField | 19 categorias (negative_keywords, sitelinks, targeting...) |
+| `impact` | CharField | critical / high / medium / low |
+| `title` | CharField | Título da recomendação |
+| `explanation` | TextField | Explicação detalhada |
+| `action_description` | TextField | Ação proposta |
+| `action_payload` | JSONField | Dados estruturados para execução automática |
+| `can_auto_apply` | BooleanField | Se pode ser aplicado automaticamente |
+| `status` | CharField | pending / applied / dismissed / failed |
+| `apply_result` | JSONField | Resultado da aplicação |
+| `campaign_id` | CharField | ID da campanha relacionada |
+| `campaign_name` | CharField | Nome da campanha |
+
+---
+
+**Última atualização:** Março 2026

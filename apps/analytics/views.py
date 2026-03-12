@@ -28,29 +28,35 @@ def _get_site(site_id: int) -> Site | None:
 
 
 def _get_gsc_client(site: Site):
-    """Build a SearchConsoleClient for a site."""
+    """Build a SearchConsoleClient for a site. Prefers OAuth, falls back to SA."""
     from .search_console import SearchConsoleClient
 
-    key_path = getattr(settings, "GSC_SERVICE_ACCOUNT_KEY_PATH", "")
     site_url = site.gsc_site_url or site.url
+    if site.google_refresh_token:
+        return SearchConsoleClient(site_url=site_url, refresh_token=site.google_refresh_token)
+    key_path = getattr(settings, "GSC_SERVICE_ACCOUNT_KEY_PATH", "")
     return SearchConsoleClient(service_account_key_path=key_path, site_url=site_url)
 
 
 def _get_ga4_admin_client(site: Site):
-    """Build a GA4AdminClient for a site."""
+    """Build a GA4AdminClient for a site. Prefers OAuth, falls back to SA."""
     from .ga4_admin import GA4AdminClient
 
-    key_path = getattr(settings, "GA4_SERVICE_ACCOUNT_KEY_PATH", "")
     property_id = site.ga4_property_id or getattr(settings, "GA4_PROPERTY_ID", "")
+    if site.google_refresh_token:
+        return GA4AdminClient(property_id=property_id, refresh_token=site.google_refresh_token)
+    key_path = getattr(settings, "GA4_SERVICE_ACCOUNT_KEY_PATH", "")
     return GA4AdminClient(property_id=property_id, service_account_key_path=key_path)
 
 
 def _get_ga4_report_client(site: Site):
-    """Build a GA4ReportClient for a site."""
+    """Build a GA4ReportClient for a site. Prefers OAuth, falls back to SA."""
     from .ga4_report import GA4ReportClient
 
-    key_path = getattr(settings, "GA4_SERVICE_ACCOUNT_KEY_PATH", "")
     property_id = site.ga4_property_id or getattr(settings, "GA4_PROPERTY_ID", "")
+    if site.google_refresh_token:
+        return GA4ReportClient(property_id=property_id, refresh_token=site.google_refresh_token)
+    key_path = getattr(settings, "GA4_SERVICE_ACCOUNT_KEY_PATH", "")
     return GA4ReportClient(property_id=property_id, service_account_key_path=key_path)
 
 

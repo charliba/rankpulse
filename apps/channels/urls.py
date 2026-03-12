@@ -14,6 +14,7 @@ urlpatterns = [
     # ── Google Ads OAuth (channel-scoped) ────────────────────
     path("<int:channel_id>/oauth/google-ads/start/", views.google_ads_oauth_start, name="google_ads_oauth_start"),
     path("oauth/google-ads/callback/", views.google_ads_oauth_callback, name="google_ads_oauth_callback"),
+    path("<int:channel_id>/oauth/google-ads/select-account/", views.google_ads_select_account, name="google_ads_select_account"),
     path("<int:channel_id>/oauth/google-ads/exchange/", views.google_ads_oauth_exchange, name="google_ads_oauth_exchange"),
     path("<int:channel_id>/oauth/google-ads/test/", views.google_ads_test_connection, name="google_ads_test_connection"),
 
@@ -51,4 +52,11 @@ urlpatterns = [
     path("<int:channel_id>/meta/creatives/", views.meta_creatives, name="meta_creatives"),
     path("<int:channel_id>/meta/insights/", views.meta_campaign_insights, name="meta_insights"),
     path("<int:channel_id>/meta/ad-set-insights/", views.meta_ad_set_insights, name="meta_ad_set_insights"),
+
+    # ── Campaign Optimizer ───────────────────────────────────
+    path("<int:channel_id>/optimizer/", views.optimizer_dashboard, name="optimizer_dashboard"),
+    path("<int:channel_id>/optimizer/config/", views.optimizer_config_save, name="optimizer_config_save"),
+    path("<int:channel_id>/optimizer/status/", views.optimizer_status, name="optimizer_status"),
+    path("<int:channel_id>/optimizer/run/", views.optimizer_run, name="optimizer_run"),
+    path("<int:channel_id>/optimizer/actions/", views.optimizer_actions_json, name="optimizer_actions"),
 ]

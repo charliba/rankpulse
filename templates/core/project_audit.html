@@ -1,0 +1,867 @@
+{% extends "base.html" %}
+{% block title %}Auditoria IA — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div x-data="auditPage()" x-init="init()">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                </div>
+                Auditoria IA
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">Análise inteligente com recomendações aplicáveis em um clique.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            {% if latest and rec_pending %}
+            <form method="post" action="{% url 'core:audit_apply_all' project.id %}">
+                {% csrf_token %}
+                <button type="submit"
+                        onclick="return confirm('Aplicar todas as recomendações AUTOMÁTICAS pendentes?')"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    ⚡ Aplicar Automáticas
+                </button>
+            </form>
+            {% endif %}
+            <form method="post" action="{% url 'core:audit_run' project.id %}" x-ref="auditForm">
+                {% csrf_token %}
+                <button type="submit" :disabled="running"
+                        :class="running ? 'opacity-60 cursor-not-allowed' : ''"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm">
+                    <template x-if="!running">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </template>
+                    <template x-if="running">
+                        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </template>
+                    {% if latest %}Nova Auditoria{% else %}Executar Auditoria{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══ Progress Bar (visible when audit is running) ═══ -->
+    <template x-if="running">
+        <div class="mb-6 bg-white rounded-2xl shadow-sm border border-violet-200 p-6 animate-pulse-slow">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-violet-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-gray-900">Auditoria em andamento</p>
+                    <p class="text-xs text-violet-600 font-medium" x-text="stepLabel"></p>
+                </div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-gradient-to-r from-violet-500 to-purple-600 h-2 rounded-full transition-all duration-700"
+                     :style="'width: ' + progressPct + '%'"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs text-gray-400">
+                <span x-text="progressPct + '%'"></span>
+                <span x-text="elapsed + 's'"></span>
+            </div>
+        </div>
+    </template>
+
+    {% if brand_profile and brand_profile.brand_summary %}
+    <!-- ═══ Brand Intelligence Card ═══ -->
+    <div x-data="{ showBrand: false }" class="mb-6">
+        <div class="bg-gradient-to-br from-violet-50 via-white to-purple-50 rounded-2xl shadow-sm border border-violet-100 overflow-hidden">
+            <div class="w-full p-5 flex items-center justify-between">
+                <button @click="showBrand = !showBrand" class="flex items-center gap-3 flex-1 text-left">
+                    <div class="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Brand Intelligence</h3>
+                        <p class="text-xs text-gray-500">DNA da marca gerado por IA &middot; Atualizado em {{ brand_profile.last_brand_analysis|date:"d/m H:i" }}</p>
+                    </div>
+                </button>
+                <div class="flex items-center gap-2">
+                    <form method="post" action="{% url 'core:brand_intel_refresh' project.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-100 hover:bg-violet-200 rounded-lg transition" title="Reescanear site, redes sociais e regenerar DNA da marca">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Atualizar
+                        </button>
+                    </form>
+                    <button @click="showBrand = !showBrand">
+                        <svg :class="showBrand && 'rotate-180'" class="w-4 h-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div x-show="showBrand" x-collapse x-cloak class="px-5 pb-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Brand Summary -->
+                    <div class="bg-white rounded-xl p-4 border border-gray-100 md:col-span-2">
+                        <h4 class="text-xs font-semibold text-violet-600 uppercase tracking-wider mb-2">Resumo da Marca</h4>
+                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ brand_profile.brand_summary }}</p>
+                    </div>
+                    {% if brand_profile.target_audience %}
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">Público-Alvo</h4>
+                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ brand_profile.target_audience }}</p>
+                    </div>
+                    {% endif %}
+                    {% if brand_profile.tone_of_voice %}
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2">Tom de Voz</h4>
+                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ brand_profile.tone_of_voice }}</p>
+                    </div>
+                    {% endif %}
+                    {% if brand_profile.key_services %}
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-2">Serviços Principais</h4>
+                        <div class="flex flex-wrap gap-1.5">
+                            {% for svc in brand_profile.key_services %}
+                            <span class="px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700 rounded-full">{{ svc }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if brand_profile.differentiators %}
+                    <div class="bg-white rounded-xl p-4 border border-gray-100">
+                        <h4 class="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-2">Diferenciais</h4>
+                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ brand_profile.differentiators }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if brand_profile.instagram_profile %}
+                <div class="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                    {% if brand_profile.instagram_profile.username %}
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-pink-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                        @{{ brand_profile.instagram_profile.username }} &middot; {{ brand_profile.instagram_profile.followers|default:"0" }} seguidores
+                    </span>
+                    {% endif %}
+                    {% if brand_profile.facebook_page.name %}
+                    <span class="flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        {{ brand_profile.facebook_page.name }} &middot; {{ brand_profile.facebook_page.fan_count|default:"0" }} curtidas
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- ═══ Brand Intelligence: Not Yet Generated ═══ -->
+    <div class="mb-6">
+        <div class="bg-gradient-to-br from-violet-50 via-white to-purple-50 rounded-2xl shadow-sm border border-violet-100 p-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Brand Intelligence</h3>
+                        <p class="text-xs text-gray-500">Gere a inteligência da marca para alimentar auditorias com contexto do seu negócio.</p>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'core:brand_intel_refresh' project.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Gerar Inteligência
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if cache_status %}
+    <!-- ═══ Data Cache Freshness ═══ -->
+    <div x-data="{ showCache: false }" class="mb-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <button @click="showCache = !showCache" class="w-full p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-sm font-semibold text-gray-900">Cache de Dados</h3>
+                        <p class="text-xs text-gray-500">{{ cache_status|length }} tipos de dados em cache</p>
+                    </div>
+                </div>
+                <svg :class="showCache && 'rotate-180'" class="w-4 h-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="showCache" x-collapse x-cloak class="px-4 pb-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {% for dtype, info in cache_status.items %}
+                    <div class="flex items-center gap-2 p-2.5 rounded-lg border text-xs
+                                {% if info.expired %}border-red-200 bg-red-50{% else %}border-green-200 bg-green-50{% endif %}">
+                        <span class="w-2 h-2 rounded-full flex-shrink-0 {% if info.expired %}bg-red-400{% else %}bg-green-400{% endif %}"></span>
+                        <div class="min-w-0">
+                            <span class="font-medium text-gray-700 block truncate">{{ dtype }}</span>
+                            <span class="{% if info.expired %}text-red-500{% else %}text-green-600{% endif %}">
+                                {{ info.age }} &middot; {{ info.count }} itens
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if latest %}
+    <!-- Score & Summary -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Overall Score -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
+            {% if project_score %}
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Score Unificado</p>
+            <div class="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-bold border-4
+                        {% if project_score.overall_score >= 70 %}border-green-400 text-green-600 bg-green-50
+                        {% elif project_score.overall_score >= 40 %}border-yellow-400 text-yellow-600 bg-yellow-50
+                        {% else %}border-red-400 text-red-600 bg-red-50{% endif %}">
+                {{ project_score.overall_score }}
+            </div>
+            <span class="text-xs font-medium mt-1.5
+                         {% if project_score.overall_score >= 70 %}text-green-600
+                         {% elif project_score.overall_score >= 40 %}text-yellow-600
+                         {% else %}text-red-600{% endif %}">
+                {% if project_score.overall_score >= 70 %}Excelente{% elif project_score.overall_score >= 40 %}Regular{% else %}Precisa Atenção{% endif %}
+            </span>
+            <!-- Points progress -->
+            <div class="w-full mt-3 px-1">
+                <div class="flex justify-between text-[10px] text-gray-500 mb-1">
+                    <span>🏆 {{ project_score.earned_points }}/{{ project_score.total_possible }} pts</span>
+                </div>
+                <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    {% if project_score.total_possible > 0 %}
+                    <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all"
+                         style="width: {% widthratio project_score.earned_points project_score.total_possible 100 %}%"></div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif latest.overall_score is not None %}
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Score Auditoria</p>
+            <div class="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-bold border-4
+                        {% if latest.overall_score >= 70 %}border-green-400 text-green-600 bg-green-50
+                        {% elif latest.overall_score >= 40 %}border-yellow-400 text-yellow-600 bg-yellow-50
+                        {% else %}border-red-400 text-red-600 bg-red-50{% endif %}">
+                {{ latest.overall_score }}
+            </div>
+            <span class="text-xs font-medium mt-2
+                         {% if latest.overall_score >= 70 %}text-green-600
+                         {% elif latest.overall_score >= 40 %}text-yellow-600
+                         {% else %}text-red-600{% endif %}">
+                {% if latest.overall_score >= 70 %}Bom{% elif latest.overall_score >= 40 %}Regular{% else %}Precisa Atenção{% endif %}
+            </span>
+            {% else %}
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Score Geral</p>
+            <div class="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold border-4 border-gray-200 text-gray-400 bg-gray-50">—</div>
+            {% endif %}
+        </div>
+
+        <!-- Stats -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Recomendações</p>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Pendentes</span>
+                    <span class="px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-700 rounded-full">{{ rec_pending|length }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Aplicadas</span>
+                    <span class="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-700 rounded-full">{{ rec_applied|length }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Descartadas</span>
+                    <span class="px-2 py-0.5 text-xs font-bold bg-gray-100 text-gray-500 rounded-full">{{ rec_dismissed|length }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Snapshot -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Dados Analisados</p>
+            <div class="space-y-2 text-sm text-gray-600">
+                {% with snap=latest.raw_data_snapshot %}
+                <div class="flex justify-between"><span>Campanhas Google</span><span class="font-medium">{{ snap.google_ads_campaigns|default:"0" }}</span></div>
+                <div class="flex justify-between"><span>Keywords Google</span><span class="font-medium">{{ snap.google_ads_keywords|default:"0" }}</span></div>
+                <div class="flex justify-between"><span>Termos de Busca</span><span class="font-medium">{{ snap.google_ads_search_terms|default:"0" }}</span></div>
+                <div class="flex justify-between"><span>Anúncios Google</span><span class="font-medium">{{ snap.google_ads_ad_copies|default:"0" }}</span></div>
+                <div class="flex justify-between border-t border-gray-100 pt-2 mt-2"><span>Campanhas Meta</span><span class="font-medium">{{ snap.meta_ads_campaigns_total|default:"0" }}</span></div>
+                <div class="flex justify-between"><span>Conjuntos Ativos</span><span class="font-medium">{{ snap.meta_ads_ad_sets_active|default:"0" }}</span></div>
+                <div class="flex justify-between"><span>Anúncios c/ Criativo</span><span class="font-medium">{{ snap.meta_ads_ads_with_creatives|default:"0" }}</span></div>
+                <div class="flex justify-between"><span>Dados Demográficos</span><span class="font-medium">{{ snap.meta_ads_demographics_rows|default:"0" }}</span></div>
+                <div class="flex justify-between"><span>Posicionamentos</span><span class="font-medium">{{ snap.meta_ads_placement_rows|default:"0" }}</span></div>
+                <div class="flex justify-between border-t border-gray-100 pt-2 mt-2"><span>Queries SEO</span><span class="font-medium">{{ snap.seo_queries|default:"0" }}</span></div>
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- Report Info -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Relatório</p>
+            <div class="space-y-2 text-sm text-gray-600">
+                <div class="flex justify-between"><span>Data</span><span class="font-medium">{{ latest.created_at|date:"d/m/Y H:i" }}</span></div>
+                <div class="flex justify-between"><span>Duração</span><span class="font-medium">{{ latest.duration_seconds|floatformat:1 }}s</span></div>
+                <div class="flex justify-between"><span>Status</span>
+                    <span class="px-2 py-0.5 text-xs font-medium rounded-full
+                                 {% if latest.status == 'done' %}bg-green-100 text-green-700
+                                 {% elif latest.status == 'error' %}bg-red-100 text-red-700
+                                 {% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ latest.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Analysis (expandable) -->
+    {% if latest.status == 'error' and latest.error_message %}
+    <div class="bg-red-50 rounded-2xl shadow-sm border border-red-200 p-6 mb-6">
+        <h3 class="text-sm font-semibold text-red-700 uppercase tracking-wider mb-2">Erro na Auditoria</h3>
+        <p class="text-sm text-red-600">{{ latest.error_message }}</p>
+    </div>
+    {% endif %}
+    {% if latest.overall_analysis %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <button @click="showAnalysis = !showAnalysis" class="w-full flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Análise Geral da IA</h3>
+            <svg :class="showAnalysis && 'rotate-180'" class="w-4 h-4 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+        <div x-show="showAnalysis" x-collapse x-cloak class="mt-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">{{ latest.overall_analysis }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Tab Navigation -->
+    <div class="flex items-center gap-1 mb-2 bg-white rounded-lg border border-gray-200 p-1 shadow-sm w-fit">
+        <button @click="tab='pending'; subFilter='all'" :class="tab==='pending' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                class="px-4 py-2 text-xs font-medium rounded-md transition-all">
+            Pendentes ({{ rec_pending|length }})
+        </button>
+        <button @click="tab='applied'" :class="tab==='applied' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                class="px-4 py-2 text-xs font-medium rounded-md transition-all">
+            Aplicadas ({{ rec_applied|length }})
+        </button>
+        <button @click="tab='dismissed'" :class="tab==='dismissed' ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                class="px-4 py-2 text-xs font-medium rounded-md transition-all">
+            Descartadas ({{ rec_dismissed|length }})
+        </button>
+    </div>
+    <!-- Sub-filter: Auto vs Manual (only on Pending tab) -->
+    <div x-show="tab==='pending'" x-cloak class="flex items-center gap-1 mb-4">
+        <button @click="subFilter='all'" :class="subFilter==='all' ? 'bg-gray-200 text-gray-800' : 'text-gray-500 hover:text-gray-700'"
+                class="px-3 py-1.5 text-xs font-medium rounded-full transition-all">
+            Todos
+        </button>
+        <button @click="subFilter='auto'" :class="subFilter==='auto' ? 'bg-green-100 text-green-800' : 'text-gray-500 hover:text-gray-700'"
+                class="px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1">
+            ⚡ Automáticos (<span x-text="autoCount"></span>)
+        </button>
+        <button @click="subFilter='manual'" :class="subFilter==='manual' ? 'bg-amber-100 text-amber-800' : 'text-gray-500 hover:text-gray-700'"
+                class="px-3 py-1.5 text-xs font-medium rounded-full transition-all flex items-center gap-1">
+            ✋ Manuais (<span x-text="manualCount"></span>)
+        </button>
+    </div>
+
+    <!-- Recommendations List -->
+    <div class="space-y-3">
+        {% for rec in recommendations %}
+        <div x-show="
+            (tab==='pending' && '{{ rec.status }}'==='pending' && (subFilter==='all' || (subFilter==='auto' && $el.dataset.canAuto==='1') || (subFilter==='manual' && $el.dataset.canAuto==='0'))) ||
+            (tab==='applied' && '{{ rec.status }}'==='applied') ||
+            (tab==='dismissed' && '{{ rec.status }}'==='dismissed')
+        " x-cloak
+             x-data="recCard({{ rec.id }}, '{{ rec.status }}')"
+             data-rec-status="{{ rec.status }}" data-can-auto="{{ rec.can_auto_apply|yesno:'1,0' }}"
+             class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md">
+            <!-- Card Header -->
+            <div class="p-5 cursor-pointer" @click="expanded = !expanded">
+                <div class="flex items-start gap-4">
+                    <!-- Impact Badge -->
+                    <div class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center
+                                {% if rec.impact == 'critical' %}bg-red-100
+                                {% elif rec.impact == 'high' %}bg-orange-100
+                                {% elif rec.impact == 'medium' %}bg-blue-100
+                                {% else %}bg-gray-100{% endif %}">
+                        {% if rec.impact == 'critical' %}
+                        <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+                        {% elif rec.impact == 'high' %}
+                        <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                        {% elif rec.impact == 'medium' %}
+                        <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                        {% else %}
+                        <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        {% endif %}
+                    </div>
+
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1 flex-wrap">
+                            <!-- Platform badge -->
+                            <span class="px-2 py-0.5 text-xs font-medium rounded-full
+                                         {% if rec.platform == 'google_ads' %}bg-blue-50 text-blue-700
+                                         {% elif rec.platform == 'meta_ads' %}bg-purple-50 text-purple-700
+                                         {% elif rec.platform == 'seo' %}bg-green-50 text-green-700
+                                         {% else %}bg-gray-50 text-gray-600{% endif %}">
+                                {{ rec.get_platform_display }}
+                            </span>
+                            <!-- Category -->
+                            <span class="px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-600 rounded-full">{{ rec.get_category_display }}</span>
+                            <!-- Impact -->
+                            <span class="px-2 py-0.5 text-xs font-bold rounded-full
+                                         {% if rec.impact == 'critical' %}bg-red-50 text-red-700
+                                         {% elif rec.impact == 'high' %}bg-orange-50 text-orange-700
+                                         {% elif rec.impact == 'medium' %}bg-blue-50 text-blue-700
+                                         {% else %}bg-gray-50 text-gray-500{% endif %}">
+                                {{ rec.get_impact_display }}
+                            </span>
+                            {% if rec.can_auto_apply %}
+                            <span class="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 rounded-full flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                ⚡ Automático
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 rounded-full flex items-center gap-1">
+                                ✋ Manual
+                            </span>
+                            {% endif %}
+                            {% if rec.status == 'applied' %}
+                            <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">✅ Aplicada</span>
+                            {% elif rec.status == 'failed' %}
+                            <span class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">❌ Falhou</span>
+                            {% endif %}
+                            {% if rec.estimated_points %}
+                            <span class="px-2 py-0.5 text-xs font-bold bg-indigo-50 text-indigo-700 rounded-full">+{{ rec.estimated_points }} pts</span>
+                            {% endif %}
+                        </div>
+                        <h4 class="text-sm font-semibold text-gray-900">{{ rec.title }}</h4>
+                        {% if rec.campaign_name %}
+                        <p class="text-xs text-gray-400 mt-0.5">Campanha: {{ rec.campaign_name }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Expand icon -->
+                    <svg :class="expanded && 'rotate-180'" class="w-4 h-4 text-gray-400 transition-transform flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Expanded Detail -->
+            <div x-show="expanded" x-collapse x-cloak class="border-t border-gray-100">
+                <div class="p-5 bg-gray-50/50">
+                    <!-- Explanation -->
+                    <div class="mb-4">
+                        <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Por que isso é importante</h5>
+                        <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ rec.explanation }}</p>
+                    </div>
+                    <!-- Action Description -->
+                    {% if rec.action_description %}
+                    <div class="mb-4">
+                        <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ação Proposta</h5>
+                        <div class="text-sm text-gray-700 bg-white border border-gray-200 rounded-lg p-3 leading-relaxed whitespace-pre-line">{{ rec.action_description }}</div>
+                    </div>
+                    {% endif %}
+                    <!-- Actions -->
+                    {% if rec.status == 'pending' %}
+                    <div class="flex items-center gap-3 pt-2">
+                        {% if rec.can_auto_apply %}
+                        <button type="button" @click="loadPreview()"
+                                :disabled="previewing"
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50">
+                            <template x-if="!previewing">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            </template>
+                            <template x-if="previewing">
+                                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </template>
+                            <span x-text="previewing ? 'Analisando...' : '⚡ Aplicar Automaticamente'"></span>
+                        </button>
+                        {% else %}
+                        <button type="button" @click="loadPreview()"
+                                :disabled="previewing"
+                                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+                            <template x-if="!previewing">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h.01M15 10h.01M9.75 15a3.001 3.001 0 005.5 0"/></svg>
+                            </template>
+                            <template x-if="previewing">
+                                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </template>
+                            <span x-text="previewing ? 'Carregando...' : '📋 Ver Instruções'"></span>
+                        </button>
+                        {% endif %}
+                        <form method="post" action="{% url 'core:audit_dismiss' project.id rec.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                Descartar
+                            </button>
+                        </form>
+                        {% if rec.category == 'ad_copy' or rec.category == 'creative' or rec.category == 'content_gap' %}
+                        <a href="{% url 'content:social_dashboard' project.id %}?theme={{ rec.title|urlencode }}"
+                           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 transition-colors">
+                            📝 Gerar Post
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Preview Modal -->
+                    <template x-if="showPreview">
+                        <div class="mt-4 bg-violet-50 border border-violet-200 rounded-xl p-4">
+                            <h5 class="text-xs font-semibold text-violet-700 uppercase tracking-wider mb-2">Prévia da Ação</h5>
+                            <div class="text-sm text-gray-700 leading-relaxed whitespace-pre-line mb-3" x-text="previewData.preview"></div>
+                            <template x-if="previewData.can_apply">
+                                <div class="flex items-center gap-3">
+                                    <button type="button" @click="confirmApply()"
+                                            :disabled="applying"
+                                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50">
+                                        <template x-if="!applying">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        </template>
+                                        <template x-if="applying">
+                                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        </template>
+                                        <span x-text="applying ? 'Aplicando...' : 'Confirmar e Aplicar'"></span>
+                                    </button>
+                                    <button type="button" @click="showPreview = false" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="!previewData.can_apply">
+                                <p class="text-xs text-gray-500 italic">Esta recomendação requer ação manual.</p>
+                            </template>
+                            <template x-if="applyResult">
+                                <div class="mt-3 p-3 rounded-lg text-sm"
+                                     :class="applyResult.success ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'"
+                                     x-text="applyResult.message || (applyResult.success ? 'Aplicado com sucesso!' : applyResult.error)">
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    {% endif %}
+                    {% if rec.status == 'applied' and rec.applied_at %}
+                    <div class="flex items-center gap-3 pt-2">
+                        <p class="text-xs text-green-600">Aplicada em {{ rec.applied_at|date:"d/m/Y H:i" }}</p>
+                        <button type="button" @click="verifyRec()"
+                                :disabled="verifying"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50">
+                            <template x-if="!verifying">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </template>
+                            <template x-if="verifying">
+                                <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </template>
+                            <span x-text="verifying ? 'Verificando...' : 'Verificar'"></span>
+                        </button>
+                    </div>
+                    <template x-if="verifyResult">
+                        <div class="mt-2 p-3 rounded-lg text-sm"
+                             :class="verifyResult.verified ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-yellow-50 border border-yellow-200 text-yellow-700'">
+                            <span x-text="verifyResult.verified ? '✅ Verificado: ' + verifyResult.message : '⚠️ ' + verifyResult.message"></span>
+                        </div>
+                    </template>
+                    {% endif %}
+                    {% if rec.status == 'failed' and rec.apply_result.error %}
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                        <p class="text-xs text-red-700">{{ rec.apply_result.error }}</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Notes Section -->
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Observações</h5>
+
+                        <!-- Existing notes -->
+                        <div x-ref="notesList">
+                            {% for note in rec.notes.all %}
+                            <div class="flex items-start gap-2 mb-2 text-xs">
+                                <span class="text-gray-400 flex-shrink-0">{{ note.user.get_full_name|default:note.user.username }} &middot; {{ note.created_at|date:"d/m H:i" }}:</span>
+                                <span class="text-gray-600">{{ note.text }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Add note form -->
+                        <div class="flex items-start gap-2 mt-2">
+                            <textarea x-model="noteText" rows="2" placeholder="Adicionar observação..."
+                                      class="flex-1 rounded-lg border-gray-300 text-xs text-gray-700 focus:ring-violet-500 focus:border-violet-500 p-2"></textarea>
+                            <button type="button" @click="addNote()"
+                                    :disabled="!noteText.trim() || addingNote"
+                                    class="px-3 py-2 text-xs font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 flex-shrink-0">
+                                <span x-text="addingNote ? '...' : 'Enviar'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-12 bg-white rounded-2xl border border-gray-100">
+            <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            <p class="text-gray-500 text-sm">Nenhuma recomendação ainda.</p>
+            <p class="text-gray-400 text-xs mt-1">Execute uma auditoria para receber sugestões de otimização.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- No audit yet — CTA -->
+    <div class="text-center py-20 bg-white rounded-2xl border border-gray-100">
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Auditoria Inteligente com IA</h2>
+        <p class="text-sm text-gray-500 max-w-md mx-auto mb-6">
+            Nossa IA analisa o site do seu negócio, todas as campanhas do Google Ads e Meta Ads, dados de SEO,
+            e gera recomendações de nível especialista — com aplicação em um clique.
+        </p>
+        <div class="flex flex-col items-center gap-3">
+            <div class="flex items-center gap-8 text-xs text-gray-400 mb-4">
+                <span class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+                    Google Ads
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-purple-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    Meta Ads
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    SEO
+                </span>
+            </div>
+            <form method="post" action="{% url 'core:audit_run' project.id %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary-dark transition-colors shadow-lg shadow-primary/30">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                    Executar Primeira Auditoria
+                </button>
+            </form>
+            <p class="text-xs text-gray-400 mt-1">A análise pode levar 15-30 segundos. Conecte Google Ads, Meta Ads ou GSC para melhores resultados.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Historical Reports -->
+    {% if reports.count > 1 %}
+    <div class="mt-8">
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Histórico de Auditorias</h3>
+        <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <tr>
+                        <th class="text-left px-4 py-3">Data</th>
+                        <th class="text-left px-4 py-3">Score</th>
+                        <th class="text-left px-4 py-3">Recomendações</th>
+                        <th class="text-left px-4 py-3">Status</th>
+                        <th class="text-left px-4 py-3">Duração</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for r in reports %}
+                    <tr class="{% if r.id == latest.id %}bg-primary/5{% endif %}">
+                        <td class="px-4 py-3 text-gray-700">{{ r.created_at|date:"d/m/Y H:i" }}</td>
+                        <td class="px-4 py-3">
+                            {% if r.overall_score is not None %}
+                            <span class="font-bold {% if r.overall_score >= 70 %}text-green-600{% elif r.overall_score >= 40 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {{ r.overall_score }}/100
+                            </span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">{{ r.recommendations.count }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 text-xs font-medium rounded-full
+                                         {% if r.status == 'done' %}bg-green-100 text-green-700
+                                         {% elif r.status == 'error' %}bg-red-100 text-red-700
+                                         {% else %}bg-blue-100 text-blue-700{% endif %}">
+                                {{ r.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500">{{ r.duration_seconds|floatformat:1 }}s</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: .92; } }
+    .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
+</style>
+
+<script>
+function recCard(recId, recStatus) {
+    return {
+        expanded: false,
+        previewing: false,
+        showPreview: false,
+        previewData: {},
+        applying: false,
+        applyResult: null,
+        verifying: false,
+        verifyResult: null,
+        noteText: '',
+        addingNote: false,
+
+        async loadPreview() {
+            this.previewing = true;
+            this.showPreview = false;
+            this.applyResult = null;
+            try {
+                const resp = await fetch(`{% url 'core:audit_preview' project.id 0 %}`.replace('/0/', `/${recId}/`));
+                this.previewData = await resp.json();
+                this.showPreview = true;
+            } catch (e) {
+                alert('Erro ao carregar prévia.');
+            }
+            this.previewing = false;
+        },
+
+        async confirmApply() {
+            this.applying = true;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const body = this.previewData.payload
+                ? JSON.stringify({ action_type: this.previewData.action_type, payload: this.previewData.payload })
+                : '{}';
+            try {
+                const resp = await fetch(`{% url 'core:audit_apply_ajax' project.id 0 %}`.replace('/0/', `/${recId}/`), {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+                    body: body,
+                });
+                this.applyResult = await resp.json();
+                if (this.applyResult.status === 'applied') {
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (e) {
+                this.applyResult = { success: false, error: 'Erro de conexão.' };
+            }
+            this.applying = false;
+        },
+
+        async verifyRec() {
+            this.verifying = true;
+            this.verifyResult = null;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                const resp = await fetch(`{% url 'core:audit_verify' project.id 0 %}`.replace('/0/', `/${recId}/`), {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                });
+                this.verifyResult = await resp.json();
+            } catch (e) {
+                this.verifyResult = { verified: false, message: 'Erro de conexão.' };
+            }
+            this.verifying = false;
+        },
+
+        async addNote() {
+            if (!this.noteText.trim()) return;
+            this.addingNote = true;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            try {
+                const resp = await fetch(`{% url 'core:audit_add_note' project.id 0 %}`.replace('/0/', `/${recId}/`), {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: this.noteText }),
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    const el = document.createElement('div');
+                    el.className = 'flex items-start gap-2 mb-2 text-xs';
+                    el.innerHTML = `<span class="text-gray-400 flex-shrink-0">${data.user_name} &middot; agora:</span><span class="text-gray-600">${data.text}</span>`;
+                    this.$refs.notesList.appendChild(el);
+                    this.noteText = '';
+                }
+            } catch (e) {
+                alert('Erro ao salvar observação.');
+            }
+            this.addingNote = false;
+        },
+    };
+}
+
+function auditPage() {
+    const STEP_ORDER = [
+        'brand_dna', 'scanning_website', 'scanning_social', 'generating_brand_dna',
+        'collecting_google_ads', 'collecting_meta_ads', 'collecting_seo',
+        'ai_analyzing_meta', 'ai_analyzing_google', 'ai_synthesizing',
+        'ai_analyzing', 'saving_results',
+    ];
+    return {
+        tab: 'pending',
+        subFilter: 'all',
+        autoCount: 0,
+        manualCount: 0,
+        showAnalysis: false,
+        running: false,
+        stepLabel: 'Iniciando...',
+        progressPct: 0,
+        elapsed: 0,
+        _pollTimer: null,
+        _elapsedTimer: null,
+        _startTime: null,
+
+        init() {
+            // Count auto vs manual pending recs
+            const cards = this.$el.querySelectorAll('[data-rec-status="pending"]');
+            let auto = 0, manual = 0;
+            cards.forEach(c => c.dataset.canAuto === '1' ? auto++ : manual++);
+            this.autoCount = auto;
+            this.manualCount = manual;
+
+            // Auto-detect if audit is currently running
+            const latestStatus = '{{ latest.status|default:"" }}';
+            if (latestStatus === 'running') {
+                this.startPolling();
+            }
+        },
+
+        startPolling() {
+            this.running = true;
+            this._startTime = Date.now();
+            this._elapsedTimer = setInterval(() => {
+                this.elapsed = Math.round((Date.now() - this._startTime) / 1000);
+            }, 1000);
+            this._pollTimer = setInterval(() => this.checkStatus(), 2000);
+        },
+
+        async checkStatus() {
+            try {
+                const resp = await fetch('{% url "core:audit_status" project.id %}');
+                const data = await resp.json();
+
+                if (data.status === 'running') {
+                    this.stepLabel = data.step_label || 'Processando...';
+                    const idx = STEP_ORDER.indexOf(data.progress_step);
+                    this.progressPct = idx >= 0 ? Math.min(Math.round(((idx + 1) / STEP_ORDER.length) * 100), 95) : 10;
+                } else if (data.status === 'done' || data.status === 'error') {
+                    this.progressPct = 100;
+                    this.stepLabel = data.status === 'done' ? 'Concluído!' : 'Erro: ' + (data.error || '');
+                    clearInterval(this._pollTimer);
+                    clearInterval(this._elapsedTimer);
+                    // Reload page to show results
+                    setTimeout(() => window.location.reload(), 800);
+                }
+            } catch (e) {
+                // Network error — keep polling
+            }
+        },
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} — RankPulse{% endblock %}
+
+{% block content %}
+<div class="lg:pl-4" x-data="{
+    tab: 'config',
+    statusData: null,
+    statusLoading: false,
+    actionsData: null,
+    actionsLoading: false,
+
+    async loadStatus() {
+        this.statusLoading = true;
+        try {
+            const resp = await fetch('{% url 'channels:optimizer_status' channel.pk %}');
+            this.statusData = await resp.json();
+        } catch(e) { this.statusData = {error: e.message}; }
+        this.statusLoading = false;
+    },
+
+    async loadActions() {
+        this.actionsLoading = true;
+        try {
+            const resp = await fetch('{% url 'channels:optimizer_actions' channel.pk %}');
+            this.actionsData = await resp.json();
+        } catch(e) { this.actionsData = {error: e.message}; }
+        this.actionsLoading = false;
+    }
+}">
+
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">⚡ Campaign Optimizer</h1>
+            <p class="text-sm text-gray-500 mt-1">{{ channel.name }} — {{ channel.get_platform_display }}</p>
+        </div>
+        <a href="{% url 'core:project_optimizer' channel.project_id %}"
+           class="text-sm text-gray-500 hover:text-gray-700">&larr; Voltar</a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg mb-2 text-sm">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Tabs -->
+    <div class="flex gap-1 mb-6 border-b border-gray-200 pb-0">
+        <button @click="tab='config'" :class="tab==='config' ? 'bg-white border-primary text-primary border-b-2 -mb-px' : 'text-gray-500 hover:text-gray-700'"
+            class="px-4 py-2.5 text-sm font-medium transition-colors rounded-t-lg">
+            ⚙️ Configuração
+        </button>
+        <button @click="tab='status'; loadStatus()" :class="tab==='status' ? 'bg-white border-primary text-primary border-b-2 -mb-px' : 'text-gray-500 hover:text-gray-700'"
+            class="px-4 py-2.5 text-sm font-medium transition-colors rounded-t-lg">
+            📊 Status / Preview
+        </button>
+        <button @click="tab='logs'; loadActions()" :class="tab==='logs' ? 'bg-white border-primary text-primary border-b-2 -mb-px' : 'text-gray-500 hover:text-gray-700'"
+            class="px-4 py-2.5 text-sm font-medium transition-colors rounded-t-lg">
+            📋 Ações ({{ recent_actions|length }})
+        </button>
+    </div>
+
+    <!-- ── TAB: CONFIG ── -->
+    <div x-show="tab==='config'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <form method="post" action="{% url 'channels:optimizer_config_save' channel.pk %}">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Enable -->
+                <div class="md:col-span-2 flex items-center gap-3">
+                    <input type="checkbox" name="enabled" id="enabled" {% if config.enabled %}checked{% endif %}
+                        class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary">
+                    <label for="enabled" class="text-gray-900 font-medium">Optimizer Ativo</label>
+                </div>
+
+                <!-- Mode -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Modo</label>
+                    <select name="mode" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                        <option value="monitor" {% if config.mode == 'monitor' %}selected{% endif %}>🔍 Monitor (apenas sugere)</option>
+                        <option value="active" {% if config.mode == 'active' %}selected{% endif %}>⚡ Ativo (executa ações)</option>
+                    </select>
+                </div>
+
+                <!-- Optimize By -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Otimizar por</label>
+                    <select name="optimize_by" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                        <option value="cpa" {% if config.optimize_by == 'cpa' %}selected{% endif %}>CPA (Custo por Ação)</option>
+                        <option value="roas" {% if config.optimize_by == 'roas' %}selected{% endif %}>ROAS (Retorno)</option>
+                    </select>
+                </div>
+
+                <!-- CPA Max -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">CPA Máximo (R$)</label>
+                    <input type="number" step="0.01" name="cpa_max" value="{{ config.cpa_max|default:'' }}"
+                        placeholder="Ex: 50.00"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+
+                <!-- ROAS Min -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ROAS Mínimo</label>
+                    <input type="number" step="0.01" name="roas_min" value="{{ config.roas_min|default:'' }}"
+                        placeholder="Ex: 3.00"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+
+                <!-- Sale Value -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Valor Médio da Venda (R$)</label>
+                    <input type="number" step="0.01" name="sale_value" value="{{ config.sale_value|default:'' }}"
+                        placeholder="Para cálculo de ROAS"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+
+                <!-- Pause Behavior -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pausa</label>
+                    <select name="pause_behavior" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                        <option value="rigid" {% if config.pause_behavior == 'rigid' %}selected{% endif %}>Rígida (pausa imediata)</option>
+                        <option value="flexible" {% if config.pause_behavior == 'flexible' %}selected{% endif %}>Flexível (espera 2x CPA)</option>
+                    </select>
+                </div>
+
+                <!-- Scale Behavior -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Escalar Budget</label>
+                    <select name="scale_behavior" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                        <option value="conservative" {% if config.scale_behavior == 'conservative' %}selected{% endif %}>Conservador (+20%)</option>
+                        <option value="accelerated" {% if config.scale_behavior == 'accelerated' %}selected{% endif %}>Acelerado (+50%)</option>
+                    </select>
+                </div>
+
+                <!-- Daily Budget Cap -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Teto Diário (R$)</label>
+                    <input type="number" step="0.01" name="daily_budget_cap" value="{{ config.daily_budget_cap|default:'' }}"
+                        placeholder="Cap de budget ao escalar"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+
+                <!-- Monthly Budget Limit -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Limite Mensal (R$)</label>
+                    <input type="number" step="0.01" name="monthly_budget_limit" value="{{ config.monthly_budget_limit|default:'' }}"
+                        placeholder="Pausa tudo ao atingir"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+
+                <!-- Lookback Days -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Janela de Análise (dias)</label>
+                    <input type="number" name="lookback_days" value="{{ config.lookback_days }}"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+
+                <!-- Min Spend to Evaluate -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Gasto Mínimo p/ Avaliar (R$)</label>
+                    <input type="number" step="0.01" name="min_spend_to_evaluate" value="{{ config.min_spend_to_evaluate }}"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-sm">
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium shadow-sm">
+                    💾 Salvar Config
+                </button>
+                <form method="post" action="{% url 'channels:optimizer_run' channel.pk %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow-sm">
+                        ▶️ Rodar Ciclo Agora
+                    </button>
+                </form>
+            </div>
+        </form>
+    </div>
+
+    <!-- ── TAB: STATUS ── -->
+    <div x-show="tab==='status'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <template x-if="statusLoading">
+            <div class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p class="text-gray-500 mt-3">Analisando campanhas...</p>
+            </div>
+        </template>
+
+        <template x-if="!statusLoading && statusData">
+            <div>
+                <div class="flex items-center gap-4 mb-4">
+                    <span class="text-sm text-gray-500" x-text="'Total: ' + (statusData.total_campaigns || 0) + ' campanhas ativas'"></span>
+                    <button @click="loadStatus()" class="text-primary hover:text-primary-dark text-sm font-medium">🔄 Atualizar</button>
+                </div>
+
+                <template x-if="statusData.error">
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" x-text="statusData.error"></div>
+                </template>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Campanha</th>
+                                <th class="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Gasto</th>
+                                <th class="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">CPA</th>
+                                <th class="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">ROAS</th>
+                                <th class="text-right py-3 px-2 text-xs font-medium text-gray-500 uppercase">Budget</th>
+                                <th class="text-center py-3 px-2 text-xs font-medium text-gray-500 uppercase">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="c in (statusData.campaigns || [])" :key="c.campaign_id">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-2.5 px-2 text-gray-900 font-medium" x-text="c.campaign_name"></td>
+                                    <td class="py-2.5 px-2 text-right text-gray-600" x-text="'R$ ' + (c.spend || 0).toFixed(2)"></td>
+                                    <td class="py-2.5 px-2 text-right font-medium"
+                                        :class="c.would_pause ? 'text-red-600' : 'text-green-600'"
+                                        x-text="c.cpa != null ? 'R$ ' + c.cpa.toFixed(2) : '—'"></td>
+                                    <td class="py-2.5 px-2 text-right text-gray-600"
+                                        x-text="c.roas != null ? c.roas.toFixed(2) + 'x' : '—'"></td>
+                                    <td class="py-2.5 px-2 text-right text-gray-600"
+                                        x-text="c.daily_budget ? 'R$ ' + c.daily_budget.toFixed(2) : '—'"></td>
+                                    <td class="py-2.5 px-2 text-center">
+                                        <template x-if="c.would_pause">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium">⏸ PAUSAR</span>
+                                        </template>
+                                        <template x-if="c.would_scale">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">📈 ESCALAR</span>
+                                        </template>
+                                        <template x-if="!c.would_pause && !c.would_scale">
+                                            <span class="text-gray-400 text-xs">—</span>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="!statusLoading && !statusData">
+            <p class="text-gray-400 text-center py-8">Clique em "Status / Preview" para carregar.</p>
+        </template>
+    </div>
+
+    <!-- ── TAB: LOGS ── -->
+    <div x-show="tab==='logs'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <template x-if="actionsLoading">
+            <div class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+        </template>
+
+        <template x-if="!actionsLoading && actionsData">
+            <div>
+                <div class="flex items-center gap-4 mb-4">
+                    <span class="text-sm text-gray-500" x-text="(actionsData.actions || []).length + ' ações recentes'"></span>
+                    <button @click="loadActions()" class="text-primary hover:text-primary-dark text-sm font-medium">🔄 Atualizar</button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Quando</th>
+                                <th class="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                                <th class="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Alvo</th>
+                                <th class="text-left py-3 px-2 text-xs font-medium text-gray-500 uppercase">Razão</th>
+                                <th class="text-center py-3 px-2 text-xs font-medium text-gray-500 uppercase">Modo</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="a in (actionsData.actions || [])" :key="a.id">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-2.5 px-2 text-gray-500 text-xs" x-text="new Date(a.executed_at).toLocaleString('pt-BR')"></td>
+                                    <td class="py-2.5 px-2 font-medium text-xs"
+                                        :class="{
+                                            'text-red-600': a.action_type.includes('PAUSE'),
+                                            'text-green-600': a.action_type.includes('REACTIVAT') || a.action_type.includes('SCALE'),
+                                            'text-amber-600': a.action_type.includes('WOULD'),
+                                            'text-gray-500': a.action_type.includes('SKIP') || a.action_type.includes('NO_DATA')
+                                        }"
+                                        x-text="a.action_type"></td>
+                                    <td class="py-2.5 px-2 text-gray-900 font-medium" x-text="a.target_name"></td>
+                                    <td class="py-2.5 px-2 text-gray-500 text-xs max-w-xs truncate" x-text="a.reason"></td>
+                                    <td class="py-2.5 px-2 text-center">
+                                        <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+                                            :class="a.mode === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+                                            x-text="a.mode"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </template>
+
+        <!-- Fallback: server-rendered actions -->
+        <template x-if="!actionsLoading && !actionsData">
+            <div>
+                <p class="text-sm text-gray-500 mb-4">Últimas {{ recent_actions|length }} ações:</p>
+                <div class="divide-y divide-gray-100">
+                    {% for a in recent_actions %}
+                    <div class="flex items-center gap-3 text-sm py-2.5">
+                        <span class="text-gray-400 text-xs w-32">{{ a.executed_at|date:"d/m H:i" }}</span>
+                        <span class="font-medium text-xs {% if 'PAUSE' in a.action_type %}text-red-600{% elif 'REACTIVAT' in a.action_type or 'SCALE' in a.action_type %}text-green-600{% elif 'WOULD' in a.action_type %}text-amber-600{% else %}text-gray-500{% endif %}">
+                            {{ a.action_type }}
+                        </span>
+                        <span class="text-gray-900 font-medium">{{ a.target_name }}</span>
+                        <span class="text-gray-500 text-xs truncate max-w-xs">{{ a.reason }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-400 text-center py-8">Nenhuma ação registrada ainda.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </template>
+    </div>
+
+</div>
+{% endblock %}

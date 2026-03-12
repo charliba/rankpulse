@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Django management command entry point for Trafic Provider."""
+"""Django management command entry point for RankPulse."""
 import os
 import sys
 

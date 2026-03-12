@@ -1,0 +1,129 @@
+{% extends "admin_dev/base_admin.html" %}
+
+{% block title %}Sistema{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Informações do Sistema</h1>
+            <p class="text-sm text-gray-500 mt-1">Ambiente, configuração e diagnóstico</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Environment -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Ambiente</h3>
+            </div>
+            <div class="divide-y divide-gray-50">
+                {% for key, val in env_info.items %}
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">{{ key }}</span>
+                    <span class="text-sm font-mono text-gray-800 text-right max-w-[60%] truncate">{{ val }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- API Keys Status -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Chaves de API</h3>
+            </div>
+            <div class="divide-y divide-gray-50">
+                {% for key_name, status in api_keys.items %}
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">{{ key_name }}</span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full {% if status %}bg-green-500{% else %}bg-gray-300{% endif %}"></span>
+                        <span class="text-xs {% if status %}text-green-600{% else %}text-gray-400{% endif %}">
+                            {% if status %}Configurada{% else %}Ausente{% endif %}
+                        </span>
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Database -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Banco de Dados</h3>
+            </div>
+            <div class="divide-y divide-gray-50">
+                {% for key, val in db_info.items %}
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">{{ key }}</span>
+                    <span class="text-sm font-mono text-gray-800">{{ val }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Data Cache -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Cache de Dados (DataSnapshot)</h3>
+            </div>
+            <div class="divide-y divide-gray-50">
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Total de snapshots</span>
+                    <span class="text-sm font-bold text-gray-800">{{ cache_stats.total }}</span>
+                </div>
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Válidos (não expirados)</span>
+                    <span class="text-sm font-bold text-green-600">{{ cache_stats.valid }}</span>
+                </div>
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Expirados</span>
+                    <span class="text-sm font-bold text-amber-600">{{ cache_stats.expired }}</span>
+                </div>
+                <div class="px-5 py-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Tipos distintos</span>
+                    <span class="text-sm font-mono text-gray-800">{{ cache_stats.types }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Installed Apps -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden col-span-full">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Apps Instalados</h3>
+            </div>
+            <div class="px-5 py-4">
+                <div class="flex flex-wrap gap-2">
+                    {% for app in installed_apps %}
+                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-medium
+                                 {% if 'apps.' in app %}bg-indigo-50 text-indigo-700
+                                 {% elif 'django.' in app %}bg-gray-100 text-gray-600
+                                 {% else %}bg-cyan-50 text-cyan-700{% endif %}">
+                        {{ app }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Middleware -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden col-span-full">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Middleware Stack</h3>
+            </div>
+            <div class="px-5 py-4">
+                <ol class="space-y-1">
+                    {% for mw in middleware %}
+                    <li class="flex items-center gap-2 text-xs font-mono text-gray-600">
+                        <span class="text-gray-300 w-5 text-right">{{ forloop.counter }}.</span>
+                        <span>{{ mw }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

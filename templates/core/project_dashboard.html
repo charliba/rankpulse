@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div x-data="dashboardData()" x-init="init()">
+    <!-- Header with Date Range Picker -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ project.name }}</h1>
+            <p class="text-sm text-gray-500 mt-1">Métricas em tempo real — últimos <span x-text="days"></span> dias</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <!-- Date Range Picker -->
+            <div class="inline-flex rounded-lg border border-gray-200 bg-white shadow-sm p-0.5" data-tour="date-picker">
+                <template x-for="opt in [{v:7,l:'7d'},{v:14,l:'14d'},{v:30,l:'30d'},{v:90,l:'90d'}]">
+                    <button @click="setDays(opt.v)"
+                            :class="days === opt.v
+                                ? 'bg-primary text-white shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'"
+                            class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150"
+                            x-text="opt.l">
+                    </button>
+                </template>
+            </div>
+            <a href="{% url 'core:project_sources' project.id %}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/></svg>
+                Fontes
+            </a>
+        </div>
+    </div>
+
+    <!-- Health Score + Summary Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <!-- Unified Score -->
+        <div class="col-span-2 lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center justify-center" data-tour="health-score">
+            {% if project_score %}
+            <div class="flex items-center gap-1.5 mb-2">
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Score</p>
+                <span class="relative" x-data="{ tip: false }" @mouseenter="tip=true" @mouseleave="tip=false">
+                    <svg class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                    <div x-show="tip" x-cloak class="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg">Score unificado 0-100: auditoria (60%) + recomendações aplicadas (40%).</div>
+                </span>
+            </div>
+            <div class="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-4 transition-colors
+                        {% if project_score.overall_score >= 70 %}border-green-400 text-green-600 bg-green-50
+                        {% elif project_score.overall_score >= 40 %}border-yellow-400 text-yellow-600 bg-yellow-50
+                        {% else %}border-red-400 text-red-600 bg-red-50{% endif %}">
+                {{ project_score.overall_score }}
+            </div>
+            <span class="text-xs font-medium mt-1
+                         {% if project_score.overall_score >= 70 %}text-green-600
+                         {% elif project_score.overall_score >= 40 %}text-yellow-600
+                         {% else %}text-red-600{% endif %}">
+                {% if project_score.overall_score >= 70 %}Excelente{% elif project_score.overall_score >= 40 %}Regular{% else %}Atenção{% endif %}
+            </span>
+            <div class="w-full mt-2 px-1">
+                <div class="flex justify-between text-[10px] text-gray-500 mb-0.5">
+                    <span>🏆 {{ project_score.earned_points }}/{{ project_score.total_possible }} pts</span>
+                </div>
+                <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    {% if project_score.total_possible > 0 %}
+                    <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all"
+                         style="width: {% widthratio project_score.earned_points project_score.total_possible 100 %}%"></div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <!-- Fallback: JS-calculated health score -->
+            <div class="flex items-center gap-1.5 mb-2">
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Saúde</p>
+                <span class="relative" x-data="{ tip: false }" @mouseenter="tip=true" @mouseleave="tip=false">
+                    <svg class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                    <div x-show="tip" x-cloak class="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg">Score 0-10 baseado em sessões, CTR, posição GSC e performance Ads.</div>
+                </span>
+            </div>
+            <div class="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold border-4 transition-colors"
+                 :class="healthScoreClass"
+                 x-text="healthScore !== null ? healthScore : '—'">
+            </div>
+            <span class="text-xs font-medium mt-2" :class="healthScoreTextClass" x-text="healthLabel"></span>
+            {% endif %}
+        </div>
+
+        <!-- Summary Card: Sessions -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow cursor-pointer"
+             @click="scrollTo('organic-section')">
+            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                Sessões Orgânicas
+                <span class="relative" x-data="{ tip: false }" @mouseenter="tip=true" @mouseleave="tip=false">
+                    <svg class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                    <div x-show="tip" x-cloak class="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg">Visitas orgânicas do GA4 no período selecionado.</div>
+                </span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900" x-text="fmt(organic.sessions)">
+                <span class="inline-block w-16 h-7 bg-gray-200 rounded animate-pulse"></span>
+            </div>
+            <div class="text-xs mt-1" :class="deltaClass(organic.sessions, organic.sessions_prev)">
+                <span x-show="organic.sessions_prev > 0" x-text="deltaLabel(organic.sessions, organic.sessions_prev)"></span>
+            </div>
+        </div>
+
+        <!-- Summary Card: GSC Clicks -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow cursor-pointer"
+             @click="scrollTo('organic-section')">
+            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                Cliques GSC
+                <span class="relative" x-data="{ tip: false }" @mouseenter="tip=true" @mouseleave="tip=false">
+                    <svg class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                    <div x-show="tip" x-cloak class="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg">Cliques no Google Search Console. CTR e posição média inclusos.</div>
+                </span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900" x-text="fmt(organic.gsc_clicks)">
+                <span class="inline-block w-16 h-7 bg-gray-200 rounded animate-pulse"></span>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+                CTR <span x-text="organic.gsc_ctr + '%'"></span> · Pos <span x-text="organic.gsc_position"></span>
+            </div>
+        </div>
+
+        <!-- Summary Card: Ads Spend -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow cursor-pointer"
+             @click="scrollTo('ads-section')">
+            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                Gasto Total Ads
+                <span class="relative" x-data="{ tip: false }" @mouseenter="tip=true" @mouseleave="tip=false">
+                    <svg class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                    <div x-show="tip" x-cloak class="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg">Soma do investimento em Google Ads + Meta Ads no período.</div>
+                </span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900" x-text="'R$ ' + (ads.spend + meta.spend).toFixed(2)">
+                <span class="inline-block w-20 h-7 bg-gray-200 rounded animate-pulse"></span>
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+                Google <span x-text="'R$ ' + ads.spend.toFixed(2)"></span> · Meta <span x-text="'R$ ' + meta.spend.toFixed(2)"></span>
+            </div>
+        </div>
+
+        <!-- Summary Card: Total Clicks -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow cursor-pointer"
+             @click="scrollTo('meta-section')">
+            <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                Cliques Totais Ads
+                <span class="relative" x-data="{ tip: false }" @mouseenter="tip=true" @mouseleave="tip=false">
+                    <svg class="w-3.5 h-3.5 text-gray-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>
+                    <div x-show="tip" x-cloak class="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg">Total de cliques pagos (Google Ads + Meta Ads) com comparação vs período anterior.</div>
+                </span>
+            </div>
+            <div class="text-2xl font-bold text-gray-900" x-text="fmt(ads.clicks + meta.clicks)">
+                <span class="inline-block w-12 h-7 bg-gray-200 rounded animate-pulse"></span>
+            </div>
+            <div class="text-xs mt-1" :class="deltaClass(ads.clicks + meta.clicks, ads.clicks_prev + meta.clicks_prev)">
+                <span x-show="(ads.clicks_prev + meta.clicks_prev) > 0" x-text="deltaLabel(ads.clicks + meta.clicks, ads.clicks_prev + meta.clicks_prev)"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Channel Cards Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+        <!-- Organic Card (GA4 + GSC) -->
+        <div id="organic-section" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-green-800 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        Orgânico
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        {% if has_ga4 or has_gsc %}
+                        <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Conectado</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">Desconectado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div id="organic-card"
+                 :hx-get="organicUrl"
+                 hx-trigger="load"
+                 hx-swap="innerHTML"
+                 class="p-6 min-h-[200px]">
+                <div class="flex items-center justify-center h-32">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Google Ads Card -->
+        <div id="ads-section" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-blue-800 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+                        Google Ads
+                    </h3>
+                    {% if has_google_ads %}
+                    <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">Conectado</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">Desconectado</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div id="ads-card"
+                 :hx-get="adsUrl"
+                 hx-trigger="load"
+                 hx-swap="innerHTML"
+                 class="p-6 min-h-[200px]">
+                <div class="flex items-center justify-center h-32">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta Ads Card -->
+        <div id="meta-section" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-purple-800 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        Meta Ads
+                    </h3>
+                    {% if has_meta_ads %}
+                    <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">Conectado</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">Desconectado</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div id="meta-card"
+                 :hx-get="metaUrl"
+                 hx-trigger="load"
+                 hx-swap="innerHTML"
+                 class="p-6 min-h-[200px]">
+                <div class="flex items-center justify-center h-32">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Chart -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6" data-tour="chart">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Evolução no Período</h3>
+            <div class="flex items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-green-500 rounded"></span> Sessões</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-blue-500 rounded"></span> Cliques GSC</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-purple-500 rounded"></span> Impressões</span>
+            </div>
+        </div>
+        <div class="h-64 relative">
+            <canvas id="timelineChart"></canvas>
+            <div x-show="!chartReady" class="absolute inset-0 flex items-center justify-center">
+                <p class="text-sm text-gray-400">Carregando dados do gráfico...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Queries + Top Pages side by side -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Top Queries (GSC)</h3>
+            <div x-show="organic.top_queries.length > 0" class="space-y-2">
+                <template x-for="(q, i) in organic.top_queries" :key="i">
+                    <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-green-50 text-green-700 text-xs font-bold flex items-center justify-center" x-text="i + 1"></span>
+                            <span class="text-sm text-gray-800 truncate" x-text="q.query"></span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0 ml-2">
+                            <span x-text="q.clicks + ' cliques'"></span>
+                            <span class="text-gray-300">|</span>
+                            <span x-text="q.impressions + ' imp'"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <p x-show="organic.top_queries.length === 0" class="text-sm text-gray-400 text-center py-4">
+                Conecte o GSC para ver queries
+            </p>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Top Páginas (GSC)</h3>
+            <div x-show="organic.top_pages.length > 0" class="space-y-2">
+                <template x-for="(p, i) in organic.top_pages" :key="i">
+                    <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-50 text-blue-700 text-xs font-bold flex items-center justify-center" x-text="i + 1"></span>
+                            <span class="text-sm text-gray-800 truncate" x-text="p.page.replace(/^https?:\/\/[^\/]+/, '')"></span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500 flex-shrink-0 ml-2">
+                            <span x-text="p.clicks + ' cliques'"></span>
+                            <span class="text-gray-300">|</span>
+                            <span x-text="'Pos ' + p.position"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <p x-show="organic.top_pages.length === 0" class="text-sm text-gray-400 text-center py-4">
+                Conecte o GSC para ver páginas
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+const PROJECT_ID = {{ project.id }};
+const BASE_ORGANIC_URL = "{% url 'core:api_organic_data' project.id %}";
+const BASE_ADS_URL = "{% url 'core:api_ads_data' project.id %}";
+const BASE_META_URL = "{% url 'core:api_meta_data' project.id %}";
+
+function dashboardData() {
+    return {
+        days: 7,
+        organic: { sessions: 0, sessions_prev: 0, gsc_clicks: 0, gsc_impressions: 0, gsc_ctr: 0, gsc_position: 0, top_queries: [], top_pages: [], daily: [] },
+        ads: { spend: 0, impressions: 0, clicks: 0, conversions: 0, ctr: 0, cpc: 0, campaigns_active: 0, spend_prev: 0, clicks_prev: 0 },
+        meta: { spend: 0, impressions: 0, clicks: 0, reach: 0, ctr: 0, cpc: 0, cpm: 0, campaigns_active: 0, spend_prev: 0, clicks_prev: 0 },
+        healthScore: null,
+        healthLabel: 'Calculando...',
+        chartReady: false,
+        _chart: null,
+
+        get organicUrl() { return BASE_ORGANIC_URL + '?days=' + this.days; },
+        get adsUrl() { return BASE_ADS_URL + '?days=' + this.days; },
+        get metaUrl() { return BASE_META_URL + '?days=' + this.days; },
+
+        get healthScoreClass() {
+            if (this.healthScore === null) return 'border-gray-200 text-gray-400 bg-gray-50';
+            if (this.healthScore >= 7) return 'border-green-400 text-green-600 bg-green-50';
+            if (this.healthScore >= 4) return 'border-yellow-400 text-yellow-600 bg-yellow-50';
+            return 'border-red-400 text-red-600 bg-red-50';
+        },
+        get healthScoreTextClass() {
+            if (this.healthScore === null) return 'text-gray-400';
+            if (this.healthScore >= 7) return 'text-green-600';
+            if (this.healthScore >= 4) return 'text-yellow-600';
+            return 'text-red-600';
+        },
+
+        fmt(n) { return n != null ? n.toLocaleString('pt-BR') : '—'; },
+
+        deltaLabel(curr, prev) {
+            if (!prev || prev === 0) return '';
+            const pct = ((curr - prev) / prev * 100).toFixed(1);
+            return (pct >= 0 ? '\u25B2 +' : '\u25BC ') + pct + '% vs anterior';
+        },
+        deltaClass(curr, prev) {
+            if (!prev || prev === 0) return 'text-gray-400';
+            return curr >= prev ? 'text-green-600' : 'text-red-500';
+        },
+
+        scrollTo(id) {
+            document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+
+        setDays(d) {
+            this.days = d;
+            this.chartReady = false;
+            this.$nextTick(() => {
+                htmx.ajax('GET', this.organicUrl, { target: '#organic-card', swap: 'innerHTML' });
+                htmx.ajax('GET', this.adsUrl, { target: '#ads-card', swap: 'innerHTML' });
+                htmx.ajax('GET', this.metaUrl, { target: '#meta-card', swap: 'innerHTML' });
+            });
+        },
+
+        init() {
+            document.body.addEventListener('htmx:afterSwap', (e) => {
+                const target = e.detail.target;
+                const script = target.querySelector('script[data-card-json]');
+                if (!script) return;
+
+                try {
+                    const data = JSON.parse(script.textContent);
+                    if (data._type === 'organic') {
+                        this.organic = { ...this.organic, ...data };
+                    } else if (data._type === 'ads') {
+                        this.ads = { ...this.ads, ...data };
+                    } else if (data._type === 'meta') {
+                        this.meta = { ...this.meta, ...data };
+                    }
+                    this.recalcScore();
+                    this.updateChart();
+                } catch (err) {
+                    console.warn('Card JSON parse error:', err);
+                }
+            });
+        },
+
+        recalcScore() {
+            let score = 5;
+            if (this.organic.sessions > 0 && this.organic.sessions_prev > 0) {
+                score += (this.organic.sessions / this.organic.sessions_prev > 1 ? 1 : -1);
+            }
+            if (this.organic.gsc_ctr > 3) score += 1;
+            if (this.organic.gsc_position > 0 && this.organic.gsc_position < 20) score += 1;
+            if (this.ads.ctr > 2) score += 1;
+            if (this.meta.ctr > 1) score += 1;
+
+            this.healthScore = Math.max(0, Math.min(10, Math.round(score)));
+            if (this.healthScore >= 7) this.healthLabel = 'Excelente';
+            else if (this.healthScore >= 4) this.healthLabel = 'Regular';
+            else this.healthLabel = 'Atenção';
+        },
+
+        updateChart() {
+            const daily = this.organic.daily || [];
+            if (daily.length === 0) return;
+
+            const labels = daily.map(d => {
+                const parts = d.date.split('-');
+                return parts[2] + '/' + parts[1];
+            });
+            const clicks = daily.map(d => d.clicks || 0);
+            const impressions = daily.map(d => d.impressions || 0);
+            const sessions = daily.map(d => parseInt(d.sessions || 0));
+
+            const ctx = document.getElementById('timelineChart');
+            if (!ctx) return;
+
+            if (this._chart) {
+                this._chart.data.labels = labels;
+                this._chart.data.datasets[0].data = sessions;
+                this._chart.data.datasets[1].data = clicks;
+                this._chart.data.datasets[2].data = impressions;
+                this._chart.update('none');
+            } else {
+                this._chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Sessões',
+                                data: sessions,
+                                borderColor: '#22c55e',
+                                backgroundColor: 'rgba(34,197,94,0.08)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                            },
+                            {
+                                label: 'Cliques GSC',
+                                data: clicks,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59,130,246,0.08)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointHoverRadius: 5,
+                            },
+                            {
+                                label: 'Impressões',
+                                data: impressions,
+                                borderColor: '#a855f7',
+                                backgroundColor: 'rgba(168,85,247,0.05)',
+                                borderWidth: 1.5,
+                                fill: false,
+                                tension: 0.3,
+                                pointRadius: 2,
+                                pointHoverRadius: 4,
+                                yAxisID: 'y1',
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#111827',
+                                titleColor: '#f3f4f6',
+                                bodyColor: '#d1d5db',
+                                padding: 12,
+                                cornerRadius: 8,
+                                displayColors: true,
+                            },
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11 }, color: '#9ca3af' },
+                            },
+                            y: {
+                                grid: { color: 'rgba(0,0,0,0.04)' },
+                                ticks: { font: { size: 11 }, color: '#9ca3af' },
+                                beginAtZero: true,
+                            },
+                            y1: {
+                                position: 'right',
+                                grid: { display: false },
+                                ticks: { font: { size: 11 }, color: '#c4b5fd' },
+                                beginAtZero: true,
+                            },
+                        },
+                    },
+                });
+            }
+            this.chartReady = true;
+        },
+    };
+}
+</script>
+{% endblock %}

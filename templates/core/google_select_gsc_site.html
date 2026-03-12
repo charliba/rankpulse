@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Selecionar Site GSC — {{ site.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-4">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="{% url 'core:dashboard' %}" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+        <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <a href="{% url 'core:site_detail' site.pk %}" class="hover:text-indigo-600 transition-colors">{{ site.name }}</a>
+        <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-gray-900 font-medium">Selecionar Site GSC</span>
+    </nav>
+
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Selecionar Site do Search Console</h1>
+    <p class="text-gray-500 mb-8">Escolha qual site do Google Search Console usar com <strong>{{ site.name }}</strong>.</p>
+
+    {% if error_msg %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+        <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="text-sm text-amber-800">{{ error_msg }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if gsc_sites %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="space-y-3 mb-8">
+            {% for gsc in gsc_sites %}
+            <label class="flex items-center gap-4 p-4 bg-white rounded-xl border-2 cursor-pointer transition-all hover:border-indigo-300
+                          {% if gsc.url == site.gsc_site_url %}border-indigo-500 ring-2 ring-indigo-100{% else %}border-gray-200{% endif %}">
+                <input type="radio" name="site_url" value="{{ gsc.url }}"
+                       {% if gsc.url == site.gsc_site_url %}checked{% endif %}
+                       class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                <div class="flex-1 min-w-0">
+                    <p class="text-gray-900 font-medium truncate">{{ gsc.url }}</p>
+                    {% if gsc.permission %}
+                    <p class="text-xs text-gray-400 mt-1">Permissão: <span class="font-medium
+                        {% if gsc.permission == 'siteOwner' %}text-green-600
+                        {% elif gsc.permission == 'siteFullUser' %}text-blue-600
+                        {% else %}text-gray-500{% endif %}">{{ gsc.permission }}</span></p>
+                    {% endif %}
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button type="submit"
+                    class="px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors shadow-sm">
+                Confirmar Site
+            </button>
+            <a href="{% url 'core:site_integrations' site_id=site.pk %}"
+               class="text-gray-500 hover:text-gray-700 transition-colors text-sm">
+                Pular este passo
+            </a>
+        </div>
+    </form>
+    {% elif not error_msg %}
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+        <div class="flex items-start gap-3">
+            <svg class="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div>
+                <p class="font-semibold text-amber-900">Nenhum site do Search Console encontrado</p>
+                <p class="text-sm text-amber-700 mt-1">
+                    Sua conta Google não tem sites verificados no Search Console.
+                    <a href="https://search.google.com/search-console" target="_blank" class="underline font-medium">Acesse o Search Console</a> para adicionar seu site.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-6">
+        <a href="{% url 'core:site_integrations' site_id=site.pk %}"
+           class="text-indigo-600 hover:text-indigo-800 transition-colors text-sm">
+            ← Voltar às integrações
+        </a>
+    </div>
+</div>
+{% endblock %}

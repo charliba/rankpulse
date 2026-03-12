@@ -21,29 +21,50 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def _get_service(service_account_key_path: str, readonly: bool = True):
+def _get_service(service_account_key_path: str = "", readonly: bool = True, credentials=None):
     """Build Search Console API service.
 
     Args:
         service_account_key_path: Path to the service account JSON key file.
         readonly: If False, uses full webmasters scope (for sitemap submission).
+        credentials: Pre-built credentials (OAuth). If set, service_account_key_path is ignored.
 
     Returns:
         googleapiclient.discovery.Resource for searchconsole v1.
     """
-    from google.oauth2 import service_account
     from googleapiclient.discovery import build
 
+    if credentials is None:
+        from google.oauth2 import service_account
+        scope = (
+            "https://www.googleapis.com/auth/webmasters.readonly"
+            if readonly
+            else "https://www.googleapis.com/auth/webmasters"
+        )
+        credentials = service_account.Credentials.from_service_account_file(
+            service_account_key_path,
+            scopes=[scope],
+        )
+    return build("searchconsole", "v1", credentials=credentials)
+
+
+def _build_gsc_oauth_credentials(refresh_token: str, readonly: bool = True):
+    """Build OAuth2 credentials from a refresh token for GSC."""
+    import os
+    from google.oauth2.credentials import Credentials
     scope = (
         "https://www.googleapis.com/auth/webmasters.readonly"
         if readonly
         else "https://www.googleapis.com/auth/webmasters"
     )
-    credentials = service_account.Credentials.from_service_account_file(
-        service_account_key_path,
+    return Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=os.environ.get("GOOGLE_ADS_CLIENT_ID", ""),
+        client_secret=os.environ.get("GOOGLE_ADS_CLIENT_SECRET", ""),
         scopes=[scope],
     )
-    return build("searchconsole", "v1", credentials=credentials)
 
 
 def _get_indexing_service(service_account_key_path: str):
@@ -76,9 +97,10 @@ class SearchConsoleClient:
         data = client.fetch_performance(days=7)
     """
 
-    def __init__(self, service_account_key_path: str, site_url: str) -> None:
+    def __init__(self, service_account_key_path: str = "", site_url: str = "", refresh_token: str = "") -> None:
         self.service_account_key_path = service_account_key_path
         self.site_url = site_url
+        self.refresh_token = refresh_token
         self._service = None
         self._service_rw = None
         self._indexing_service = None
@@ -87,14 +109,22 @@ class SearchConsoleClient:
     def service(self):
         """Lazy-load the read-only API service."""
         if self._service is None:
-            self._service = _get_service(self.service_account_key_path, readonly=True)
+            if self.refresh_token:
+                creds = _build_gsc_oauth_credentials(self.refresh_token, readonly=True)
+                self._service = _get_service(credentials=creds)
+            else:
+                self._service = _get_service(self.service_account_key_path, readonly=True)
         return self._service
 
     @property
     def service_rw(self):
         """Lazy-load the read-write API service (for sitemap submission)."""
         if self._service_rw is None:
-            self._service_rw = _get_service(self.service_account_key_path, readonly=False)
+            if self.refresh_token:
+                creds = _build_gsc_oauth_credentials(self.refresh_token, readonly=False)
+                self._service_rw = _get_service(credentials=creds)
+            else:
+                self._service_rw = _get_service(self.service_account_key_path, readonly=False)
         return self._service_rw
 
     @property

@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% block title %}Parâmetros IA — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div x-data="{ expanded: { meta: true, google: true, ga4: true, seo: true, cross: true, ai: true } }">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'core:project_audit' project.id %}" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                    </div>
+                    Parâmetros IA
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">Configure quais fontes de dados e dimensões a IA deve analisar na auditoria.</p>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- ═══ Data Sources ═══ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-1">Fontes de Dados</h2>
+            <p class="text-sm text-gray-500 mb-4">Selecione quais plataformas a auditoria deve coletar e analisar.</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <!-- Meta Ads -->
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all
+                    {% if config.source_meta_ads %}border-blue-400 bg-blue-50{% else %}border-gray-200 bg-white hover:border-gray-300{% endif %}">
+                    <input type="checkbox" name="source_meta_ads" {% if config.source_meta_ads %}checked{% endif %}
+                           class="sr-only peer" onchange="this.closest('label').classList.toggle('border-blue-400'); this.closest('label').classList.toggle('bg-blue-50'); this.closest('label').classList.toggle('border-gray-200'); this.closest('label').classList.toggle('bg-white');">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900">Meta Ads</span>
+                </label>
+                <!-- Google Ads -->
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all
+                    {% if config.source_google_ads %}border-green-400 bg-green-50{% else %}border-gray-200 bg-white hover:border-gray-300{% endif %}">
+                    <input type="checkbox" name="source_google_ads" {% if config.source_google_ads %}checked{% endif %}
+                           class="sr-only peer" onchange="this.closest('label').classList.toggle('border-green-400'); this.closest('label').classList.toggle('bg-green-50'); this.closest('label').classList.toggle('border-gray-200'); this.closest('label').classList.toggle('bg-white');">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900">Google Ads</span>
+                </label>
+                <!-- SEO -->
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all
+                    {% if config.source_seo %}border-amber-400 bg-amber-50{% else %}border-gray-200 bg-white hover:border-gray-300{% endif %}">
+                    <input type="checkbox" name="source_seo" {% if config.source_seo %}checked{% endif %}
+                           class="sr-only peer" onchange="this.closest('label').classList.toggle('border-amber-400'); this.closest('label').classList.toggle('bg-amber-50'); this.closest('label').classList.toggle('border-gray-200'); this.closest('label').classList.toggle('bg-white');">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900">SEO / Search Console</span>
+                </label>
+                <!-- GA4 -->
+                <label class="relative flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all
+                    {% if config.source_ga4 %}border-purple-400 bg-purple-50{% else %}border-gray-200 bg-white hover:border-gray-300{% endif %}">
+                    <input type="checkbox" name="source_ga4" {% if config.source_ga4 %}checked{% endif %}
+                           class="sr-only peer" onchange="this.closest('label').classList.toggle('border-purple-400'); this.closest('label').classList.toggle('bg-purple-50'); this.closest('label').classList.toggle('border-gray-200'); this.closest('label').classList.toggle('bg-white');">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900">GA4 Analytics</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- ═══ Meta Ads Dimensions ═══ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            <button type="button" @click="expanded.meta = !expanded.meta"
+                    class="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                    </div>
+                    <h2 class="text-lg font-semibold text-gray-900">Meta Ads — Dimensões</h2>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 transition-transform" :class="expanded.meta ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="expanded.meta" x-collapse class="px-6 pb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_campaign_structure" {% if config.meta_campaign_structure %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Estrutura de Campanhas</span><p class="text-xs text-gray-500">Organização e nomenclatura das campanhas</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_audience_targeting" {% if config.meta_audience_targeting %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Segmentação de Público</span><p class="text-xs text-gray-500">Idade, interesse, comportamento e lookalike</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_creatives" {% if config.meta_creatives %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Criativos e Copies</span><p class="text-xs text-gray-500">Imagens, vídeos e textos dos anúncios</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_budget_bidding" {% if config.meta_budget_bidding %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Orçamento e Lances</span><p class="text-xs text-gray-500">Distribuição de budget e estratégia de bid</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_placements" {% if config.meta_placements %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Posicionamentos</span><p class="text-xs text-gray-500">Feed, Stories, Reels, Audience Network</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_demographics" {% if config.meta_demographics %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Demografia</span><p class="text-xs text-gray-500">Faixa etária, gênero e localização</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_ad_performance" {% if config.meta_ad_performance %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Performance por Anúncio</span><p class="text-xs text-gray-500">CTR, CPM, CPC e conversões por ad</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="meta_conversion_tracking" {% if config.meta_conversion_tracking %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Rastreamento de Conversão</span><p class="text-xs text-gray-500">Pixel, eventos e atribuição</p></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Google Ads Dimensions ═══ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            <button type="button" @click="expanded.google = !expanded.google"
+                    class="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h2 class="text-lg font-semibold text-gray-900">Google Ads — Dimensões</h2>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 transition-transform" :class="expanded.google ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="expanded.google" x-collapse class="px-6 pb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_campaign_structure" {% if config.google_campaign_structure %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Estrutura de Campanhas</span><p class="text-xs text-gray-500">Organização, tipos e status das campanhas</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_keywords" {% if config.google_keywords %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Palavras-Chave</span><p class="text-xs text-gray-500">Desempenho, match types e Quality Score</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_search_terms" {% if config.google_search_terms %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Termos de Busca</span><p class="text-xs text-gray-500">Termos reais que acionaram os anúncios</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_ad_copies" {% if config.google_ad_copies %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Textos dos Anúncios</span><p class="text-xs text-gray-500">Headlines, descrições e performance por ad</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_extensions" {% if config.google_extensions %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Extensões</span><p class="text-xs text-gray-500">Sitelinks, callouts, structured snippets</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_bidding" {% if config.google_bidding %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Estratégia de Lances</span><p class="text-xs text-gray-500">Manual CPC, maximize conversions, tROAS</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_quality_score" {% if config.google_quality_score %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Quality Score</span><p class="text-xs text-gray-500">QS, relevância do ad, experiência LP</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_geo_targeting" {% if config.google_geo_targeting %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Geolocalização</span><p class="text-xs text-gray-500">Regiões, cidades e ajustes de lance por local</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="google_conversion_tracking" {% if config.google_conversion_tracking %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Rastreamento de Conversão</span><p class="text-xs text-gray-500">Tags, ações de conversão e atribuição</p></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ GA4 Analytics Dimensions ═══ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            <button type="button" @click="expanded.ga4 = !expanded.ga4"
+                    class="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    </div>
+                    <h2 class="text-lg font-semibold text-gray-900">GA4 Analytics — Dimensões</h2>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 transition-transform" :class="expanded.ga4 ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="expanded.ga4" x-collapse class="px-6 pb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="ga4_traffic_sources" {% if config.ga4_traffic_sources %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Fontes de Tráfego</span><p class="text-xs text-gray-500">Organic, Direct, Social, Paid, Referral</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="ga4_top_pages" {% if config.ga4_top_pages %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Top Páginas</span><p class="text-xs text-gray-500">Páginas mais visitadas com tempo médio e bounce</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="ga4_conversions" {% if config.ga4_conversions %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Eventos de Conversão</span><p class="text-xs text-gray-500">sign_up, purchase, generate_lead e custom events</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="ga4_demographics" {% if config.ga4_demographics %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Demografia</span><p class="text-xs text-gray-500">País, cidade e distribuição geográfica</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="ga4_devices" {% if config.ga4_devices %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Dispositivos</span><p class="text-xs text-gray-500">Mobile, desktop, tablet e comportamento</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="ga4_organic" {% if config.ga4_organic %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Tráfego Orgânico</span><p class="text-xs text-gray-500">Sessões orgânicas diárias e tendência</p></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ SEO Dimensions ═══ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            <button type="button" @click="expanded.seo = !expanded.seo"
+                    class="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <h2 class="text-lg font-semibold text-gray-900">SEO / Search Console — Dimensões</h2>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 transition-transform" :class="expanded.seo ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="expanded.seo" x-collapse class="px-6 pb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="seo_top_queries" {% if config.seo_top_queries %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Top Queries</span><p class="text-xs text-gray-500">Palavras-chave com impressões, cliques, CTR e posição</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="seo_top_pages" {% if config.seo_top_pages %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Top Páginas</span><p class="text-xs text-gray-500">URLs com melhor desempenho orgânico</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="seo_indexing" {% if config.seo_indexing %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Indexação</span><p class="text-xs text-gray-500">Status de indexação e erros de rastreamento</p></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Cross-Platform + AI Settings ═══ -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
+            <button type="button" @click="expanded.ai = !expanded.ai"
+                    class="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h2 class="text-lg font-semibold text-gray-900">Configurações da IA</h2>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 transition-transform" :class="expanded.ai ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div x-show="expanded.ai" x-collapse class="px-6 pb-6">
+                <!-- Toggles -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="cross_platform_synthesis" {% if config.cross_platform_synthesis %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Síntese Cross-Platform</span><p class="text-xs text-gray-500">Análise cruzada entre todas as plataformas</p></div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                        <div class="flex items-center h-5 mt-0.5">
+                            <input type="checkbox" name="brand_dna_context" {% if config.brand_dna_context %}checked{% endif %}
+                                   class="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500">
+                        </div>
+                        <div><span class="text-sm font-medium text-gray-900">Contexto Brand DNA</span><p class="text-xs text-gray-500">Usar inteligência da marca para personalizar análise</p></div>
+                    </label>
+                </div>
+                <!-- Select fields -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Profundidade da Análise</label>
+                        <select name="ai_depth" class="w-full rounded-lg border-gray-300 text-sm focus:ring-violet-500 focus:border-violet-500">
+                            <option value="quick" {% if config.ai_depth == "quick" %}selected{% endif %}>Rápida (resumo)</option>
+                            <option value="standard" {% if config.ai_depth == "standard" %}selected{% endif %}>Padrão</option>
+                            <option value="deep" {% if config.ai_depth == "deep" %}selected{% endif %}>Profunda (detalhada)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Idioma da Análise</label>
+                        <select name="ai_language" class="w-full rounded-lg border-gray-300 text-sm focus:ring-violet-500 focus:border-violet-500">
+                            <option value="pt-BR" {% if config.ai_language == "pt-BR" %}selected{% endif %}>Português (BR)</option>
+                            <option value="en" {% if config.ai_language == "en" %}selected{% endif %}>English</option>
+                            <option value="es" {% if config.ai_language == "es" %}selected{% endif %}>Español</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Save Button ═══ -->
+        <div class="flex items-center justify-between">
+            <a href="{% url 'core:project_audit' project.id %}" class="text-sm text-gray-500 hover:text-gray-700">
+                Voltar para Auditoria
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Salvar Parâmetros
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@
 {% block title %}Integrações — {{ site.name }} — RankPulse{% endblock %}
 
 {% block content %}
-<div class="lg:pl-4" x-data="{ activeTab: 'ga4' }">
+<div class="lg:pl-4" x-data="{ activeTab: 'google' }">
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <a href="{% url 'core:dashboard' %}" class="hover:text-indigo-600 transition-colors">Dashboard</a>
@@ -23,10 +23,20 @@
     </div>
 
     <!-- Status Overview -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
-        <div class="bg-white rounded-xl border p-4 text-center {{ status.ga4|yesno:'border-green-200,border-amber-200' }}">
-            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center {{ status.ga4|yesno:'bg-green-100 text-green-600,bg-amber-100 text-amber-600' }}">
-                {% if status.ga4 %}
+    <div class="grid grid-cols-3 gap-3 mb-8">
+        <div class="bg-white rounded-xl border p-4 text-center {{ status.google_connected|yesno:'border-green-200,border-amber-200' }}">
+            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center {{ status.google_connected|yesno:'bg-green-100 text-green-600,bg-amber-100 text-amber-600' }}">
+                {% if status.google_connected %}
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                {% else %}
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
+                {% endif %}
+            </div>
+            <p class="text-xs font-medium text-gray-700">Google</p>
+        </div>
+        <div class="bg-white rounded-xl border p-4 text-center {{ status.ga4_property|yesno:'border-green-200,border-amber-200' }}">
+            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center {{ status.ga4_property|yesno:'bg-green-100 text-green-600,bg-amber-100 text-amber-600' }}">
+                {% if status.ga4_property %}
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 {% else %}
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
@@ -44,16 +54,6 @@
             </div>
             <p class="text-xs font-medium text-gray-700">Search Console</p>
         </div>
-        <div class="bg-white rounded-xl border p-4 text-center {{ status.ga4_service_account|yesno:'border-green-200,border-amber-200' }}">
-            <div class="w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center {{ status.ga4_service_account|yesno:'bg-green-100 text-green-600,bg-amber-100 text-amber-600' }}">
-                {% if status.ga4_service_account %}
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                {% else %}
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
-                {% endif %}
-            </div>
-            <p class="text-xs font-medium text-gray-700">Service Account</p>
-        </div>
     </div>
 
     <!-- Info: Google Ads moved -->
@@ -64,79 +64,139 @@
 
     <!-- Tabs -->
     <div class="flex flex-wrap gap-1 p-1 bg-gray-100 rounded-xl mb-6">
-        <button @click="activeTab = 'ga4'"
-                :class="activeTab === 'ga4' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+        <button @click="activeTab = 'google'"
+                :class="activeTab === 'google' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                 class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all">
-            GA4
+            Conectar Google
         </button>
-        <button @click="activeTab = 'gsc'"
-                :class="activeTab === 'gsc' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+        <button @click="activeTab = 'manual'"
+                :class="activeTab === 'manual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                 class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all">
-            Search Console
-        </button>
-        <button @click="activeTab = 'service_accounts'"
-                :class="activeTab === 'service_accounts' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-medium transition-all">
-            Service Accounts
+            Campos Manuais
         </button>
     </div>
 
-    <form method="post" class="max-w-3xl">
-        {% csrf_token %}
-
-        <!-- ============================================================ -->
-        <!--  TAB: GA4                                                    -->
-        <!-- ============================================================ -->
-        <div x-show="activeTab === 'ga4'" x-cloak>
-
-            <!-- Guide -->
-            <div x-data="{ guideOpen: false }" class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border border-orange-200 mb-6 overflow-hidden">
-                <button type="button" @click="guideOpen = !guideOpen"
-                        class="w-full flex items-center justify-between px-6 py-4 text-left">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-gray-900 text-sm">Como configurar o Google Analytics 4</h3>
-                            <p class="text-xs text-gray-500 mt-0.5">Guia passo a passo — clique para expandir</p>
-                        </div>
+    <!-- ============================================================ -->
+    <!--  TAB: CONECTAR GOOGLE (OAuth)                                -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'google'" x-cloak>
+        <div class="max-w-3xl">
+            {% if status.google_connected %}
+            <!-- Connected state -->
+            <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </div>
-                    <svg :class="guideOpen && 'rotate-180'" class="w-5 h-5 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-                <div x-show="guideOpen" x-collapse class="px-6 pb-6">
-                    <div class="space-y-4 text-sm text-gray-700">
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">1</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Measurement ID</p>
-                                <p class="mt-1">Acesse <a href="https://analytics.google.com" target="_blank" class="text-orange-600 underline font-medium">analytics.google.com</a> → <strong>Admin</strong> (⚙️) → <strong>Data Streams</strong> → clique no fluxo web → copie o <strong>Measurement ID</strong> (formato <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">G-XXXXXXXXXX</code>).</p>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-green-900">Google conectado</h3>
+                        <p class="text-sm text-green-700 mt-1">Sua conta Google está vinculada para acesso ao Analytics e Search Console.</p>
+
+                        <div class="mt-4 space-y-3">
+                            {% if site.ga4_property_id %}
+                            <div class="flex items-center gap-3 bg-white rounded-lg border border-green-200 p-3">
+                                <svg class="w-5 h-5 text-orange-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs text-gray-500 font-medium">GA4 Property</p>
+                                    <p class="text-sm text-gray-900 font-mono">{{ site.ga4_property_id }}{% if site.ga4_measurement_id %} · {{ site.ga4_measurement_id }}{% endif %}</p>
+                                </div>
+                                <a href="{% url 'core:google_select_property' site_id=site.pk %}" class="text-xs text-indigo-600 hover:underline font-medium">Alterar</a>
                             </div>
+                            {% else %}
+                            <a href="{% url 'core:google_select_property' site_id=site.pk %}"
+                               class="flex items-center gap-3 bg-amber-50 rounded-lg border border-amber-200 p-3 hover:bg-amber-100 transition-colors group">
+                                <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-amber-800">Selecionar propriedade GA4</p>
+                                    <p class="text-xs text-amber-600">Clique para escolher qual propriedade usar</p>
+                                </div>
+                                <svg class="w-4 h-4 text-amber-400 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                            {% endif %}
+
+                            {% if site.gsc_site_url %}
+                            <div class="flex items-center gap-3 bg-white rounded-lg border border-green-200 p-3">
+                                <svg class="w-5 h-5 text-cyan-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs text-gray-500 font-medium">Search Console</p>
+                                    <p class="text-sm text-gray-900 truncate">{{ site.gsc_site_url }}</p>
+                                </div>
+                                <a href="{% url 'core:google_select_gsc_site' site_id=site.pk %}" class="text-xs text-indigo-600 hover:underline font-medium">Alterar</a>
+                            </div>
+                            {% else %}
+                            <a href="{% url 'core:google_select_gsc_site' site_id=site.pk %}"
+                               class="flex items-center gap-3 bg-amber-50 rounded-lg border border-amber-200 p-3 hover:bg-amber-100 transition-colors group">
+                                <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-amber-800">Selecionar site do Search Console</p>
+                                    <p class="text-xs text-amber-600">Clique para escolher qual site usar</p>
+                                </div>
+                                <svg class="w-4 h-4 text-amber-400 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                            {% endif %}
                         </div>
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">2</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">API Secret (Measurement Protocol)</p>
-                                <p class="mt-1">Ainda no Data Stream, role até <strong>Measurement Protocol API secrets</strong> → clique em <strong>Create</strong> → dê um nome → copie o secret gerado.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">3</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Property ID</p>
-                                <p class="mt-1">Em <strong>Admin</strong> (⚙️) → <strong>Property Settings</strong> → o <strong>Property ID</strong> aparece no topo da página (número puro, ex: <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">526327250</code>).</p>
-                            </div>
+
+                        <div class="mt-5 flex items-center gap-3">
+                            <a href="{% url 'core:google_oauth_start' site_id=site.pk %}"
+                               class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium transition-colors">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                Reconectar
+                            </a>
+                            <a href="{% url 'core:google_disconnect' site_id=site.pk %}"
+                               class="inline-flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
+                               onclick="return confirm('Desconectar a conta Google? Os dados GA4 e GSC continuarão salvos.')">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                Desconectar
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
+            {% else %}
+            <!-- Not connected state -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-50 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-indigo-500" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-2">Conectar com Google</h3>
+                <p class="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+                    Conecte sua conta Google com um clique para acessar dados do Google Analytics 4 e Search Console automaticamente.
+                </p>
+                <a href="{% url 'core:google_oauth_start' site_id=site.pk %}"
+                   class="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all font-medium text-gray-700 group">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    <span class="group-hover:text-indigo-600 transition-colors">Conectar com Google</span>
+                </a>
+                <p class="text-xs text-gray-400 mt-4">Solicitaremos acesso somente leitura ao Analytics e Search Console.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
-            <!-- Form Fields -->
+    <!-- ============================================================ -->
+    <!--  TAB: CAMPOS MANUAIS (GA4 + GSC)                            -->
+    <!-- ============================================================ -->
+    <div x-show="activeTab === 'manual'" x-cloak>
+        <form method="post" class="max-w-3xl">
+            {% csrf_token %}
+
+            <!-- GA4 Fields -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-2">
                     <svg class="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                     Google Analytics 4
                 </h3>
+                <p class="text-xs text-gray-400 mb-4">Preenchidos automaticamente ao conectar com Google. Edite apenas se necessário.</p>
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Measurement ID</label>
@@ -154,61 +214,14 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- ============================================================ -->
-        <!--  TAB: SEARCH CONSOLE                                         -->
-        <!-- ============================================================ -->
-        <div x-show="activeTab === 'gsc'" x-cloak>
-
-            <!-- Guide -->
-            <div x-data="{ guideOpen: false }" class="bg-gradient-to-br from-cyan-50 to-teal-50 rounded-xl border border-cyan-200 mb-6 overflow-hidden">
-                <button type="button" @click="guideOpen = !guideOpen"
-                        class="w-full flex items-center justify-between px-6 py-4 text-left">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-cyan-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-gray-900 text-sm">Como configurar o Google Search Console</h3>
-                            <p class="text-xs text-gray-500 mt-0.5">Guia passo a passo — clique para expandir</p>
-                        </div>
-                    </div>
-                    <svg :class="guideOpen && 'rotate-180'" class="w-5 h-5 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </button>
-                <div x-show="guideOpen" x-collapse class="px-6 pb-6">
-                    <div class="space-y-4 text-sm text-gray-700">
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-600 text-white text-xs font-bold flex items-center justify-center">1</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Adicionar propriedade no GSC</p>
-                                <p class="mt-1">Acesse <a href="https://search.google.com/search-console" target="_blank" class="text-cyan-600 underline font-medium">search.google.com/search-console</a> → <strong>Adicionar propriedade</strong> → escolha <strong>Propriedade de URL</strong> → cole a URL do seu site (ex: <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">https://seusite.com.br</code>).</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-600 text-white text-xs font-bold flex items-center justify-center">2</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Verificar propriedade</p>
-                                <p class="mt-1">Use um dos métodos de verificação: <strong>registro DNS TXT</strong> (recomendado), meta tag HTML, ou arquivo HTML. Após verificar, marque "GSC Verificado" abaixo.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-cyan-600 text-white text-xs font-bold flex items-center justify-center">3</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">URL do Site no GSC</p>
-                                <p class="mt-1">Cole a mesma URL usada na verificação. <strong>Deve incluir https:// e barra final</strong> (ex: <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">https://seusite.com.br/</code>).</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Form Fields -->
+            <!-- GSC Fields -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-2">
                     <svg class="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     Google Search Console
                 </h3>
+                <p class="text-xs text-gray-400 mb-4">Preenchidos automaticamente ao conectar com Google. Edite apenas se necessário.</p>
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
                         {{ form.gsc_verified }}
@@ -220,111 +233,17 @@
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- ============================================================ -->
-        <!--  TAB: SERVICE ACCOUNTS                                       -->
-        <!-- ============================================================ -->
-        <div x-show="activeTab === 'service_accounts'" x-cloak>
-
-            <!-- Guide -->
-            <div x-data="{ guideOpen: false }" class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl border border-purple-200 mb-6 overflow-hidden">
-                <button type="button" @click="guideOpen = !guideOpen"
-                        class="w-full flex items-center justify-between px-6 py-4 text-left">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-gray-900 text-sm">Como criar uma Service Account (Conta de Serviço)</h3>
-                            <p class="text-xs text-gray-500 mt-0.5">Necessário para GSC e GA4 Data API — clique para expandir</p>
-                        </div>
-                    </div>
-                    <svg :class="guideOpen && 'rotate-180'" class="w-5 h-5 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            <!-- Save Button -->
+            <div class="flex items-center gap-4 pt-2 pb-8">
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium shadow-sm">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Salvar Integrações
                 </button>
-                <div x-show="guideOpen" x-collapse class="px-6 pb-6">
-                    <div class="space-y-4 text-sm text-gray-700">
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">1</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Criar Service Account no Google Cloud</p>
-                                <ol class="mt-1 space-y-1 list-decimal list-inside">
-                                    <li>Acesse <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" class="text-purple-600 underline font-medium">Google Cloud → Service Accounts</a></li>
-                                    <li>Clique em <strong>+ Criar Conta de Serviço</strong></li>
-                                    <li>Nome: "RankPulse" → clique <strong>Criar e Continuar</strong></li>
-                                    <li>Role: deixe vazio → <strong>Concluir</strong></li>
-                                </ol>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">2</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Baixar a chave JSON</p>
-                                <p class="mt-1">Na lista de Service Accounts, clique na conta criada → aba <strong>Chaves</strong> → <strong>Adicionar chave</strong> → <strong>Criar nova chave</strong> → Tipo: <strong>JSON</strong> → <strong>Criar</strong>. O arquivo JSON será baixado automaticamente.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">3</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Conceder acesso</p>
-                                <p class="mt-1"><strong>Para GA4:</strong> Em analytics.google.com → Admin → Acesso à propriedade → adicione o email da Service Account (ex: <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">rankpulse@projeto.iam.gserviceaccount.com</code>) com role <strong>Viewer</strong>.</p>
-                                <p class="mt-1"><strong>Para GSC:</strong> Em search.google.com/search-console → Configurações → Usuários e permissões → adicione o mesmo email com <strong>Acesso total</strong>.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <span class="flex-shrink-0 w-7 h-7 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">4</span>
-                            <div>
-                                <p class="font-semibold text-gray-900">Colar o conteúdo JSON aqui</p>
-                                <p class="mt-1">Abra o arquivo JSON baixado com qualquer editor de texto, <strong>selecione todo o conteúdo</strong> (Ctrl+A) e <strong>cole</strong> no campo abaixo. Você pode usar o mesmo JSON para GSC e GA4 se quiser.</p>
-                                <div class="mt-2 bg-purple-50 border border-purple-200 rounded-lg p-3">
-                                    <p class="text-purple-800 text-xs"><strong>Ative as APIs no projeto:</strong> Vá em <a href="https://console.cloud.google.com/apis/library" target="_blank" class="text-purple-600 underline">Biblioteca de APIs</a> e ative: <strong>Google Search Console API</strong>, <strong>Google Analytics Data API</strong> e <strong>Google Analytics Admin API</strong>.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <a href="{% url 'core:site_detail' site.pk %}" class="text-sm text-gray-500 hover:text-gray-700">Cancelar</a>
             </div>
-
-            <!-- Form Fields -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                    Chaves de Service Account (JSON)
-                </h3>
-                <div class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Service Account — Search Console
-                            {% if status.gsc_service_account %}
-                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Configurado</span>
-                            {% endif %}
-                        </label>
-                        {{ form.gsc_service_account_key }}
-                        <p class="text-xs text-gray-400 mt-1">Cole o conteúdo completo do arquivo JSON da Service Account</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Service Account — GA4 Data API
-                            {% if status.ga4_service_account %}
-                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">Configurado</span>
-                            {% endif %}
-                        </label>
-                        {{ form.ga4_service_account_key }}
-                        <p class="text-xs text-gray-400 mt-1">Pode ser o mesmo JSON usado acima, ou uma Service Account diferente</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Save Button (always visible) -->
-        <div class="flex items-center gap-4 pt-2 pb-8">
-            <button type="submit"
-                    class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium shadow-sm">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                Salvar Integrações
-            </button>
-            <a href="{% url 'core:site_detail' site.pk %}" class="text-sm text-gray-500 hover:text-gray-700">Cancelar</a>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 {% endblock %}

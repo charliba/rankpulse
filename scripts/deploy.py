@@ -5,7 +5,7 @@ Mesma arquitetura do deploy.py do Beezle (Paramiko + SFTP + backup).
 
 Uso:
     cd rankPulse
-    python deploy.py
+    python scripts/deploy.py
 """
 import os
 import subprocess
@@ -149,15 +149,19 @@ def main() -> None:
     # ── 2. Upload do código ─────────────────────────────────────
     print("\n[2] Transferindo arquivos de código...")
     sys.stdout.flush()
-    local_dir = os.path.dirname(os.path.abspath(__file__))
+    local_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # rankPulse root
 
     # Criar estrutura de diretórios no servidor
     dirs = [
-        "", "config", "apps", "apps/core", "apps/analytics", "apps/seo",
-        "apps/content", "apps/checklists", "apps/channels", "apps/chat_support",
+        "", "config", "apps", "scripts",
+        "apps/core", "apps/core/models",
+        "apps/analytics", "apps/seo",
+        "apps/content", "apps/checklists", "apps/channels",
+        "apps/chat_support", "apps/payments",
         "templates", "templates/core", "templates/channels", "templates/components",
-        "templates/pages",
+        "templates/pages", "templates/partials",
         "static", "static/css", "static/js", "static/img", "static/images", "logs", "credentials",
+        "apps/core/templatetags",
         "apps/core/management", "apps/core/management/commands",
         "apps/analytics/management", "apps/analytics/management/commands",
         "apps/seo/management", "apps/seo/management/commands",
@@ -166,7 +170,7 @@ def main() -> None:
         "apps/core/migrations", "apps/analytics/migrations",
         "apps/seo/migrations", "apps/content/migrations",
         "apps/checklists/migrations", "apps/channels/migrations",
-        "apps/chat_support/migrations",
+        "apps/chat_support/migrations", "apps/payments/migrations",
     ]
     for d in dirs:
         run_cmd(client, f"mkdir -p {BASE}/{d}")
@@ -195,6 +199,8 @@ def main() -> None:
     # ── 4. Parar Gunicorn ───────────────────────────────────────
     print("\n[4] Parando Gunicorn (RankPulse)...")
     sys.stdout.flush()
+    # Stop any systemd gunicorn that may occupy the same port
+    run_cmd(client, "systemctl stop gunicorn-aresdev.service 2>/dev/null || true", timeout=10)
     run_cmd(client, f"pkill -f 'gunicorn.*config.wsgi.*{GUNICORN_PORT}'", timeout=10)
     time.sleep(2)
     print("    OK")
@@ -232,7 +238,7 @@ def main() -> None:
         sys.stdout.flush()
 
     # Gerar migrations para todos os apps (necessário pois migrations são criadas no servidor)
-    cmd = f"cd {BASE} && source venv/bin/activate && python manage.py makemigrations core channels analytics seo content checklists 2>&1 | tail -10"
+    cmd = f"cd {BASE} && source venv/bin/activate && python manage.py makemigrations core channels analytics seo content checklists chat_support payments 2>&1 | tail -10"
     out, err = run_cmd(client, cmd, timeout=60)
     print(f"    makemigrations: {out.strip() if out else 'OK'}")
     sys.stdout.flush()
@@ -257,7 +263,7 @@ def main() -> None:
         f"cd {BASE} && source venv/bin/activate && "
         f"gunicorn config.wsgi:application "
         f"--bind=127.0.0.1:{GUNICORN_PORT} "
-        f"--workers=2 --daemon "
+        f"--workers=2 --timeout=120 --daemon "
         f"--access-logfile={BASE}/logs/access.log "
         f"--error-logfile={BASE}/logs/error.log"
     )
@@ -316,7 +322,7 @@ def main() -> None:
     print("\n[11] Atualizando GitHub...")
     sys.stdout.flush()
     try:
-        git_dir = os.path.dirname(os.path.abspath(__file__))
+        git_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # rankPulse root
 
         result = subprocess.run(["git", "add", "-A"], capture_output=True, text=True, cwd=git_dir)
         commit_msg = f"Deploy {timestamp}"

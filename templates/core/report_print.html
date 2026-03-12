@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório — {{ project.name }} ({{ days }}d)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { font-size: 12px; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 max-w-3xl mx-auto p-8">
+    <!-- Print button -->
+    <div class="no-print flex justify-end gap-3 mb-6">
+        <button onclick="window.print()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            Imprimir / Salvar PDF
+        </button>
+        <button onclick="window.close()" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+            Fechar
+        </button>
+    </div>
+
+    <!-- Header -->
+    <div class="border-b pb-4 mb-6">
+        <h1 class="text-2xl font-bold">{{ project.name }}</h1>
+        <p class="text-sm text-gray-500">Relatório de Performance — Últimos {{ days }} dias</p>
+        <p class="text-xs text-gray-400 mt-1">Gerado em {{ generated_at|date:"d/m/Y H:i" }}</p>
+    </div>
+
+    <!-- Summary -->
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-3">Resumo</h2>
+        <p class="text-sm text-gray-600">
+            Este relatório apresenta os dados consolidados de tráfego orgânico e campanhas pagas
+            do projeto <strong>{{ project.name }}</strong> nos últimos {{ days }} dias.
+        </p>
+        <p class="text-sm text-gray-500 mt-2">
+            Para dados detalhados em tempo real, acesse o dashboard em
+            <strong>rankpulse.cloud</strong>.
+        </p>
+    </div>
+
+    <!-- Channels -->
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-3">Canais Conectados</h2>
+        <table class="w-full text-sm border border-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-3 py-2 text-left font-medium">Canal</th>
+                    <th class="px-3 py-2 text-left font-medium">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for site in project.sites.all %}
+                <tr>
+                    <td class="px-3 py-2">{{ site.name }} (GA4 + GSC)</td>
+                    <td class="px-3 py-2">{% if site.google_refresh_token %}Conectado{% else %}Desconectado{% endif %}</td>
+                </tr>
+                {% endfor %}
+                {% for channel in project.channels.all %}
+                <tr>
+                    <td class="px-3 py-2">{{ channel.get_platform_display }}</td>
+                    <td class="px-3 py-2">{% if channel.is_configured %}Conectado{% else %}Não configurado{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Notes -->
+    <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-3">Observações</h2>
+        <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 space-y-2">
+            <p>Os dados de campanhas são obtidos em tempo real via API (Google Ads / Meta Ads).</p>
+            <p>Os dados orgânicos são obtidos via GA4 Data API e Google Search Console.</p>
+            <p>Para exportar dados tabulares, use a opção "CSV" na página de Alertas.</p>
+        </div>
+    </div>
+
+    <div class="text-center text-xs text-gray-400 pt-6 border-t">
+        RankPulse — Plataforma de Gestão de Tráfego · {{ generated_at|date:"Y" }}
+    </div>
+</body>
+</html>

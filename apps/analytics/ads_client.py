@@ -528,6 +528,58 @@ class GoogleAdsManager:
             logger.error("Create ad group error: %s", exc)
             return {"success": False, "error": str(exc)}
 
+    def list_ads(self, ad_group_id: str) -> dict:
+        """List ads for an ad group."""
+        logger.info('Listing ads for ad group %s', ad_group_id)
+        try:
+            ga_service = self._get_service('GoogleAdsService')
+            query = f"""
+                SELECT
+                    ad_group_ad.ad.id,
+                    ad_group_ad.ad.name,
+                    ad_group_ad.ad.type,
+                    ad_group_ad.ad.final_urls,
+                    ad_group_ad.ad.responsive_search_ad.headlines,
+                    ad_group_ad.ad.responsive_search_ad.descriptions,
+                    ad_group_ad.status,
+                    metrics.impressions,
+                    metrics.clicks,
+                    metrics.cost_micros,
+                    metrics.conversions
+                FROM ad_group_ad
+                WHERE ad_group.id = {ad_group_id}
+                  AND ad_group_ad.status != 'REMOVED'
+            """
+            response = ga_service.search(
+                customer_id=self.customer_id, query=query,
+            )
+            ads = []
+            for row in response:
+                ad = row.ad_group_ad.ad
+                m = row.metrics
+                headlines = []
+                descriptions = []
+                if ad.responsive_search_ad:
+                    headlines = [h.text for h in ad.responsive_search_ad.headlines]
+                    descriptions = [d.text for d in ad.responsive_search_ad.descriptions]
+                ads.append({
+                    'id': str(ad.id),
+                    'name': ad.name or f'Ad {ad.id}',
+                    'type': ad.type_.name,
+                    'status': row.ad_group_ad.status.name,
+                    'final_urls': list(ad.final_urls),
+                    'headlines': headlines,
+                    'descriptions': descriptions,
+                    'impressions': m.impressions,
+                    'clicks': m.clicks,
+                    'cost_brl': m.cost_micros / 1_000_000 if m.cost_micros else 0,
+                    'conversions': m.conversions,
+                })
+            return {'success': True, 'ads': ads, 'count': len(ads)}
+        except Exception as exc:
+            logger.error('List ads error: %s', exc)
+            return {'success': False, 'error': str(exc)}
+
     # â”€â”€ Keywords â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def add_keywords(
@@ -957,6 +1009,227 @@ class GoogleAdsManager:
 
         except Exception as exc:
             logger.error("Keyword performance error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # ── Deep Audit Data ─────────────────────────────────────────
+
+    def get_search_terms_report(self, days: int = 30, limit: int = 100) -> dict[str, Any]:
+        """Get search terms report — what people actually searched to trigger ads."""
+        logger.info("Fetching search terms report (last %d days)", days)
+        try:
+            ga_service = self._get_service("GoogleAdsService")
+            valid_ranges = {7: "LAST_7_DAYS", 14: "LAST_14_DAYS", 30: "LAST_30_DAYS"}
+            date_range = valid_ranges.get(days, "LAST_30_DAYS")
+
+            query = f"""
+                SELECT
+                    search_term_view.search_term,
+                    campaign.name,
+                    ad_group.name,
+                    metrics.impressions,
+                    metrics.clicks,
+                    metrics.ctr,
+                    metrics.cost_micros,
+                    metrics.conversions,
+                    search_term_view.status
+                FROM search_term_view
+                WHERE segments.date DURING {date_range}
+                  AND metrics.impressions > 0
+                ORDER BY metrics.clicks DESC
+                LIMIT {limit}
+            """
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            terms = []
+            for row in response:
+                st = row.search_term_view
+                m = row.metrics
+                terms.append({
+                    "search_term": st.search_term,
+                    "campaign": row.campaign.name,
+                    "ad_group": row.ad_group.name,
+                    "impressions": m.impressions,
+                    "clicks": m.clicks,
+                    "ctr": m.ctr,
+                    "cost_brl": m.cost_micros / 1_000_000 if m.cost_micros else 0,
+                    "conversions": m.conversions,
+                    "status": st.status.name if st.status else "",
+                })
+
+            return {"success": True, "terms": terms, "count": len(terms)}
+        except Exception as exc:
+            logger.error("Search terms report error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_ad_copy_report(self, limit: int = 50) -> dict[str, Any]:
+        """Get ad text (headlines, descriptions) for all responsive search ads."""
+        logger.info("Fetching ad copy report")
+        try:
+            ga_service = self._get_service("GoogleAdsService")
+            query = f"""
+                SELECT
+                    campaign.name,
+                    ad_group.name,
+                    ad_group_ad.ad.id,
+                    ad_group_ad.ad.responsive_search_ad.headlines,
+                    ad_group_ad.ad.responsive_search_ad.descriptions,
+                    ad_group_ad.ad.final_urls,
+                    ad_group_ad.status,
+                    metrics.impressions,
+                    metrics.clicks,
+                    metrics.ctr,
+                    metrics.cost_micros,
+                    metrics.conversions
+                FROM ad_group_ad
+                WHERE ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
+                  AND ad_group_ad.status != 'REMOVED'
+                ORDER BY metrics.impressions DESC
+                LIMIT {limit}
+            """
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            ads = []
+            for row in response:
+                ad = row.ad_group_ad.ad
+                m = row.metrics
+                headlines = [h.text for h in ad.responsive_search_ad.headlines] if ad.responsive_search_ad.headlines else []
+                descriptions = [d.text for d in ad.responsive_search_ad.descriptions] if ad.responsive_search_ad.descriptions else []
+                final_urls = list(ad.final_urls) if ad.final_urls else []
+
+                ads.append({
+                    "campaign": row.campaign.name,
+                    "ad_group": row.ad_group.name,
+                    "ad_id": str(ad.id),
+                    "status": row.ad_group_ad.status.name,
+                    "headlines": headlines,
+                    "descriptions": descriptions,
+                    "final_urls": final_urls,
+                    "impressions": m.impressions,
+                    "clicks": m.clicks,
+                    "ctr": m.ctr,
+                    "cost_brl": m.cost_micros / 1_000_000 if m.cost_micros else 0,
+                    "conversions": m.conversions,
+                })
+
+            return {"success": True, "ads": ads, "count": len(ads)}
+        except Exception as exc:
+            logger.error("Ad copy report error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_campaign_details(self) -> dict[str, Any]:
+        """Get detailed campaign settings: bidding, networks, locations, languages."""
+        logger.info("Fetching campaign details for customer %s", self.customer_id)
+        try:
+            ga_service = self._get_service("GoogleAdsService")
+            query = """
+                SELECT
+                    campaign.id,
+                    campaign.name,
+                    campaign.status,
+                    campaign.advertising_channel_type,
+                    campaign.bidding_strategy_type,
+                    campaign.network_settings.target_google_search,
+                    campaign.network_settings.target_search_network,
+                    campaign.network_settings.target_content_network,
+                    campaign.geo_target_type_setting.positive_geo_target_type,
+                    campaign.start_date,
+                    campaign.end_date,
+                    campaign_budget.amount_micros
+                FROM campaign
+                WHERE campaign.status != 'REMOVED'
+            """
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            campaigns = []
+            for row in response:
+                c = row.campaign
+                ns = c.network_settings
+                campaigns.append({
+                    "id": str(c.id),
+                    "name": c.name,
+                    "status": c.status.name,
+                    "channel_type": c.advertising_channel_type.name,
+                    "bidding_strategy": c.bidding_strategy_type.name if c.bidding_strategy_type else "",
+                    "target_google_search": ns.target_google_search if ns else None,
+                    "target_search_network": ns.target_search_network if ns else None,
+                    "target_content_network": ns.target_content_network if ns else None,
+                    "daily_budget_brl": row.campaign_budget.amount_micros / 1_000_000 if row.campaign_budget.amount_micros else 0,
+                    "start_date": c.start_date,
+                    "end_date": c.end_date,
+                })
+
+            return {"success": True, "campaigns": campaigns, "count": len(campaigns)}
+        except Exception as exc:
+            logger.error("Campaign details error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_location_targeting(self) -> dict[str, Any]:
+        """Get location targeting for all campaigns."""
+        logger.info("Fetching location targeting for customer %s", self.customer_id)
+        try:
+            ga_service = self._get_service("GoogleAdsService")
+            query = """
+                SELECT
+                    campaign.id,
+                    campaign.name,
+                    campaign_criterion.location.geo_target_constant,
+                    campaign_criterion.negative
+                FROM campaign_criterion
+                WHERE campaign_criterion.type = 'LOCATION'
+                  AND campaign.status != 'REMOVED'
+            """
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            locations = []
+            for row in response:
+                locations.append({
+                    "campaign_id": str(row.campaign.id),
+                    "campaign_name": row.campaign.name,
+                    "location": row.campaign_criterion.location.geo_target_constant,
+                    "negative": row.campaign_criterion.negative,
+                })
+
+            return {"success": True, "locations": locations, "count": len(locations)}
+        except Exception as exc:
+            logger.error("Location targeting error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_existing_assets(self) -> dict[str, Any]:
+        """Get existing assets (sitelinks, callouts, snippets) linked to campaigns."""
+        logger.info("Fetching existing assets for customer %s", self.customer_id)
+        try:
+            ga_service = self._get_service("GoogleAdsService")
+            query = """
+                SELECT
+                    campaign.id,
+                    campaign.name,
+                    campaign_asset.field_type,
+                    asset.sitelink_asset.link_text,
+                    asset.sitelink_asset.description1,
+                    asset.callout_asset.callout_text,
+                    asset.structured_snippet_asset.header,
+                    asset.structured_snippet_asset.values
+                FROM campaign_asset
+                WHERE campaign.status != 'REMOVED'
+            """
+            response = ga_service.search(customer_id=self.customer_id, query=query)
+            assets = []
+            for row in response:
+                a = row.asset
+                asset_data = {
+                    "campaign_id": str(row.campaign.id),
+                    "campaign_name": row.campaign.name,
+                    "field_type": row.campaign_asset.field_type.name,
+                }
+                if a.sitelink_asset.link_text:
+                    asset_data["sitelink_text"] = a.sitelink_asset.link_text
+                    asset_data["sitelink_desc1"] = a.sitelink_asset.description1
+                if a.callout_asset.callout_text:
+                    asset_data["callout_text"] = a.callout_asset.callout_text
+                if a.structured_snippet_asset.header:
+                    asset_data["snippet_header"] = a.structured_snippet_asset.header
+                    asset_data["snippet_values"] = list(a.structured_snippet_asset.values)
+                assets.append(asset_data)
+
+            return {"success": True, "assets": assets, "count": len(assets)}
+        except Exception as exc:
+            logger.error("Existing assets error: %s", exc)
             return {"success": False, "error": str(exc)}
 
     # â”€â”€ Assets (Sitelinks, Callouts, Snippets, Call) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

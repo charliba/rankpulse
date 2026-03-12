@@ -14,38 +14,57 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def _get_client(service_account_key_path: str):
+def _get_client(service_account_key_path: str | None = None, credentials=None):
     """Build GA4 Data API client."""
     from google.analytics.data_v1beta import BetaAnalyticsDataClient
-    from google.oauth2 import service_account
 
-    credentials = service_account.Credentials.from_service_account_file(
-        service_account_key_path,
-    )
+    if credentials is None:
+        from google.oauth2 import service_account
+        credentials = service_account.Credentials.from_service_account_file(
+            service_account_key_path,
+        )
     return BetaAnalyticsDataClient(credentials=credentials)
+
+
+def _build_oauth_credentials(refresh_token: str):
+    """Build OAuth2 credentials from a refresh token."""
+    import os
+    from google.oauth2.credentials import Credentials
+    return Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=os.environ.get("GOOGLE_ADS_CLIENT_ID", ""),
+        client_secret=os.environ.get("GOOGLE_ADS_CLIENT_SECRET", ""),
+        scopes=["https://www.googleapis.com/auth/analytics.readonly"],
+    )
 
 
 class GA4ReportClient:
     """Client for GA4 Data API (reporting).
 
-    Usage:
-        client = GA4ReportClient(
-            property_id="123456789",
-            service_account_key_path="credentials/ga4.json",
-        )
-        data = client.get_organic_traffic(days=30)
+    Usage with OAuth:
+        client = GA4ReportClient(property_id="123456789", refresh_token="...")
+
+    Usage with Service Account:
+        client = GA4ReportClient(property_id="123456789", service_account_key_path="credentials/ga4.json")
     """
 
-    def __init__(self, property_id: str, service_account_key_path: str) -> None:
+    def __init__(self, property_id: str, service_account_key_path: str = "", refresh_token: str = "") -> None:
         self.property_id = property_id
         self.service_account_key_path = service_account_key_path
+        self.refresh_token = refresh_token
         self._client = None
 
     @property
     def client(self):
         """Lazy-load the API client."""
         if self._client is None:
-            self._client = _get_client(self.service_account_key_path)
+            if self.refresh_token:
+                creds = _build_oauth_credentials(self.refresh_token)
+                self._client = _get_client(credentials=creds)
+            else:
+                self._client = _get_client(self.service_account_key_path)
         return self._client
 
     def _run_report(
@@ -148,6 +167,47 @@ class GA4ReportClient:
         return self._run_report(
             dimensions=["sessionDefaultChannelGroup"],
             metrics=["sessions", "totalUsers", "conversions"],
+            start_date=start,
+            end_date=end,
+        )
+
+    def get_overview(self, days: int = 30) -> list[dict]:
+        """Get daily overview: sessions, users, engagement."""
+        end = date.today().isoformat()
+        start = (date.today() - timedelta(days=days)).isoformat()
+
+        return self._run_report(
+            dimensions=["date"],
+            metrics=[
+                "sessions", "totalUsers", "newUsers",
+                "averageSessionDuration", "bounceRate",
+                "screenPageViews", "conversions",
+            ],
+            start_date=start,
+            end_date=end,
+        )
+
+    def get_user_demographics(self, days: int = 30) -> list[dict]:
+        """Get user demographics breakdown (country + city)."""
+        end = date.today().isoformat()
+        start = (date.today() - timedelta(days=days)).isoformat()
+
+        return self._run_report(
+            dimensions=["country", "city"],
+            metrics=["sessions", "totalUsers"],
+            start_date=start,
+            end_date=end,
+            limit=100,
+        )
+
+    def get_device_breakdown(self, days: int = 30) -> list[dict]:
+        """Get device category breakdown."""
+        end = date.today().isoformat()
+        start = (date.today() - timedelta(days=days)).isoformat()
+
+        return self._run_report(
+            dimensions=["deviceCategory"],
+            metrics=["sessions", "totalUsers", "bounceRate", "averageSessionDuration"],
             start_date=start,
             end_date=end,
         )

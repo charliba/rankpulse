@@ -306,6 +306,7 @@
 /* Markdown in bubble */
 .aura-chat-bubble strong { font-weight: 600; }
 .aura-chat-bubble em { font-style: italic; }
+
 .aura-chat-bubble code {
     background: rgba(99, 102, 241, 0.1);
     padding: 1px 4px;

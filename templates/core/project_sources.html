@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Fontes — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center gap-3 mb-2">
+        <a href="{% url 'core:project_dashboard' project.id %}" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">Fontes de Dados</h1>
+    </div>
+    <p class="text-sm text-gray-500">Conecte suas fontes para o {{ project.name }} receber métricas em tempo real.</p>
+</div>
+
+<!-- Sources Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    {% for source in sources %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+        <div class="p-6">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    {% if source.type == 'ga4' %}
+                    <div class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M22.84 2.998v17.958c0 1.68-1.362 3.042-3.042 3.042h-.014c-1.68 0-3.042-1.362-3.042-3.042V3.044c0-1.68 1.362-3.042 3.042-3.042h.014c1.68-.002 3.042 1.36 3.042 3.04v-.044zM14.73 12.132c-.002-1.68-1.364-3.04-3.044-3.04h-.014c-1.68 0-3.042 1.362-3.042 3.042v8.824c0 1.68 1.362 3.042 3.042 3.042h.014c1.68 0 3.042-1.362 3.042-3.042l.002-8.826zm-9.27 7.77a3.056 3.056 0 11-4.322 4.322 3.056 3.056 0 014.322-4.322z"/>
+                        </svg>
+                    </div>
+                    {% elif source.type == 'gsc' %}
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    {% elif source.type == 'google_ads' %}
+                    <div class="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
+                        </svg>
+                    </div>
+                    {% elif source.type == 'meta_ads' %}
+                    <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <h3 class="font-semibold text-gray-900">{{ source.label }}</h3>
+                        {% if source.site %}
+                        <p class="text-xs text-gray-400">{{ source.site.name }}</p>
+                        {% else %}
+                        <p class="text-xs text-gray-400">Nível projeto</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if source.connected %}
+                <span class="flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Conectado
+                </span>
+                {% else %}
+                <span class="flex items-center gap-1.5 px-3 py-1 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    Desconectado
+                </span>
+                {% endif %}
+            </div>
+
+            <p class="text-sm text-gray-600 mb-4 font-mono">{{ source.detail }}</p>
+
+            <div class="flex gap-2">
+                {% if source.type == 'ga4' or source.type == 'gsc' %}
+                    {% if source.connected %}
+                    <a href="{% url 'core:site_integrations' source.site.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37"/>
+                        </svg>
+                        Gerenciar
+                    </a>
+                    {% else %}
+                    <a href="{% url 'core:site_integrations' source.site.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/>
+                        </svg>
+                        Conectar
+                    </a>
+                    {% endif %}
+                {% elif source.type == 'google_ads' %}
+                    {% if source.connected %}
+                    <a href="{% url 'channels:channel_credentials' source.channel.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        Gerenciar
+                    </a>
+                    {% elif source.channel %}
+                    <a href="{% url 'channels:google_ads_oauth_start' source.channel.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+                        Conectar com Google
+                    </a>
+                    {% else %}
+                    <a href="{% url 'channels:channel_add' project.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+                        Criar Canal
+                    </a>
+                    {% endif %}
+                {% elif source.type == 'meta_ads' %}
+                    {% if source.connected %}
+                    <a href="{% url 'channels:channel_credentials' source.channel.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        Gerenciar
+                    </a>
+                    {% elif source.channel %}
+                    <a href="{% url 'channels:meta_oauth_start' source.channel.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+                        Conectar com Facebook
+                    </a>
+                    {% else %}
+                    <a href="{% url 'channels:channel_add' project.id %}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+                        Criar Canal
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+</div>
+
+{% if not sites.exists %}
+<div class="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+    <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+    </svg>
+    <h3 class="text-lg font-medium text-gray-900 mb-1">Nenhum site cadastrado</h3>
+    <p class="text-sm text-gray-500 mb-4">Adicione um site para conectar fontes de dados orgânicas (GA4 + GSC).</p>
+    <a href="{% url 'core:site_add' project.id %}"
+       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Adicionar Site
+    </a>
+</div>
+{% endif %}
+{% endblock %}

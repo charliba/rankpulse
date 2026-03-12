@@ -217,16 +217,46 @@ class MetaAdsManager:
             ad_sets = account.get_ad_sets(fields=fields, params=params)
             result = []
             for s in ad_sets:
+                targeting = s.get("targeting", {})
                 result.append({
                     "id": s["id"],
                     "name": s.get("name", ""),
                     "campaign_id": s.get("campaign_id", ""),
                     "status": s.get("status", ""),
                     "daily_budget": float(s.get("daily_budget", 0)) / 100 if s.get("daily_budget") else None,
+                    "lifetime_budget": float(s.get("lifetime_budget", 0)) / 100 if s.get("lifetime_budget") else None,
                     "billing_event": s.get("billing_event", ""),
                     "optimization_goal": s.get("optimization_goal", ""),
+                    "bid_amount": float(s.get("bid_amount", 0)) / 100 if s.get("bid_amount") else None,
                     "start_time": s.get("start_time", ""),
                     "end_time": s.get("end_time", ""),
+                    "targeting": {
+                        "age_min": targeting.get("age_min"),
+                        "age_max": targeting.get("age_max"),
+                        "genders": targeting.get("genders", []),
+                        "geo_locations": targeting.get("geo_locations", {}),
+                        "interests": [
+                            {"id": i.get("id"), "name": i.get("name")}
+                            for i in targeting.get("flexible_spec", [{}])[0].get("interests", [])
+                        ] if targeting.get("flexible_spec") else [],
+                        "behaviors": [
+                            {"id": b.get("id"), "name": b.get("name")}
+                            for b in targeting.get("flexible_spec", [{}])[0].get("behaviors", [])
+                        ] if targeting.get("flexible_spec") else [],
+                        "custom_audiences": [
+                            {"id": ca.get("id"), "name": ca.get("name")}
+                            for ca in targeting.get("custom_audiences", [])
+                        ],
+                        "excluded_custom_audiences": [
+                            {"id": ca.get("id"), "name": ca.get("name")}
+                            for ca in targeting.get("excluded_custom_audiences", [])
+                        ],
+                        "publisher_platforms": targeting.get("publisher_platforms", []),
+                        "facebook_positions": targeting.get("facebook_positions", []),
+                        "instagram_positions": targeting.get("instagram_positions", []),
+                        "device_platforms": targeting.get("device_platforms", []),
+                        "locales": targeting.get("locales", []),
+                    },
                 })
 
             return {"success": True, "ad_sets": result, "count": len(result)}
@@ -303,6 +333,49 @@ class MetaAdsManager:
             return {"success": True, "ad_set_id": ad_set_id, "status": status}
         except Exception as exc:
             logger.error("Update Meta ad set status error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def update_ad_set(
+        self, ad_set_id: str, **fields,
+    ) -> dict[str, Any]:
+        """Update ad set fields (targeting, budget, optimization_goal, etc.)."""
+        logger.info("Updating Meta ad set %s with fields: %s", ad_set_id, list(fields.keys()))
+        try:
+            self._ensure_init()
+            from facebook_business.adobjects.adset import AdSet
+            ad_set = AdSet(ad_set_id)
+            # Convert budget from BRL to cents if present
+            params = {}
+            for k, v in fields.items():
+                if k in ("daily_budget", "lifetime_budget") and isinstance(v, (int, float)):
+                    params[k] = int(v * 100)
+                else:
+                    params[k] = v
+            ad_set.api_update(params=params)
+            return {"success": True, "ad_set_id": ad_set_id, "fields_updated": list(fields.keys())}
+        except Exception as exc:
+            logger.error("Update Meta ad set error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def update_campaign(
+        self, campaign_id: str, **fields,
+    ) -> dict[str, Any]:
+        """Update campaign fields (name, daily_budget, status, etc.)."""
+        logger.info("Updating Meta campaign %s with fields: %s", campaign_id, list(fields.keys()))
+        try:
+            self._ensure_init()
+            from facebook_business.adobjects.campaign import Campaign
+            campaign = Campaign(campaign_id)
+            params = {}
+            for k, v in fields.items():
+                if k in ("daily_budget", "lifetime_budget") and isinstance(v, (int, float)):
+                    params[k] = int(v * 100)
+                else:
+                    params[k] = v
+            campaign.api_update(params=params)
+            return {"success": True, "campaign_id": campaign_id, "fields_updated": list(fields.keys())}
+        except Exception as exc:
+            logger.error("Update Meta campaign error: %s", exc)
             return {"success": False, "error": str(exc)}
 
     # ── Ads ─────────────────────────────────────────────────────
@@ -545,6 +618,260 @@ class MetaAdsManager:
             return {"success": True, "insights": result, "count": len(result)}
         except Exception as exc:
             logger.error("Meta ad set insights error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    # ── Token Management ────────────────────────────────────────
+
+    # ── Deep Audit Data ─────────────────────────────────────────
+
+    def get_ads_with_creatives(self, limit: int = 100) -> dict[str, Any]:
+        """Get ads with full creative details (headline, body, CTA, image)."""
+        logger.info("Fetching ads with creatives for %s", self.account_id)
+        try:
+            account = self._get_account()
+            fields = [
+                "name", "adset_id", "campaign_id", "status",
+                "creative", "created_time", "effective_status",
+            ]
+            params = {
+                "filtering": [{"field": "effective_status", "operator": "IN",
+                               "value": ["ACTIVE", "PAUSED"]}],
+                "limit": limit,
+            }
+            ads = account.get_ads(fields=fields, params=params)
+
+            result = []
+            for ad in ads:
+                creative_data = {}
+                creative_ref = ad.get("creative")
+                if creative_ref and creative_ref.get("id"):
+                    try:
+                        self._ensure_init()
+                        from facebook_business.adobjects.adcreative import AdCreative
+                        cr = AdCreative(creative_ref["id"])
+                        cr_fields = [
+                            "name", "title", "body", "call_to_action_type",
+                            "object_story_spec", "thumbnail_url",
+                            "effective_object_story_id", "image_url",
+                            "link_url", "url_tags",
+                        ]
+                        cr_data = cr.api_get(fields=cr_fields)
+                        oss = cr_data.get("object_story_spec", {})
+                        link_data = oss.get("link_data", {})
+                        video_data = oss.get("video_data", {})
+                        creative_data = {
+                            "title": cr_data.get("title", "") or link_data.get("name", ""),
+                            "body": cr_data.get("body", "") or link_data.get("message", "") or video_data.get("message", ""),
+                            "cta": cr_data.get("call_to_action_type", "") or link_data.get("call_to_action", {}).get("type", ""),
+                            "link_url": link_data.get("link", "") or cr_data.get("link_url", ""),
+                            "image_url": cr_data.get("image_url", "") or cr_data.get("thumbnail_url", ""),
+                            "has_video": bool(video_data),
+                            "description": link_data.get("description", ""),
+                            "caption": link_data.get("caption", ""),
+                        }
+                    except Exception:
+                        creative_data = {"error": "Could not fetch creative details"}
+
+                result.append({
+                    "id": ad["id"],
+                    "name": ad.get("name", ""),
+                    "adset_id": ad.get("adset_id", ""),
+                    "campaign_id": ad.get("campaign_id", ""),
+                    "status": ad.get("status", ""),
+                    "effective_status": ad.get("effective_status", ""),
+                    "creative": creative_data,
+                })
+
+            return {"success": True, "ads": result, "count": len(result)}
+        except Exception as exc:
+            logger.error("Get ads with creatives error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_demographic_breakdown(self, days: int = 30) -> dict[str, Any]:
+        """Get performance breakdown by age and gender."""
+        logger.info("Fetching demographic breakdown for %s", self.account_id)
+        try:
+            account = self._get_account()
+            since = (date.today() - timedelta(days=days)).isoformat()
+            until = date.today().isoformat()
+
+            fields = [
+                "campaign_id", "campaign_name",
+                "impressions", "clicks", "spend", "reach",
+                "cpc", "ctr", "actions",
+            ]
+            params = {
+                "time_range": {"since": since, "until": until},
+                "breakdowns": ["age", "gender"],
+                "level": "campaign",
+                "filtering": [{"field": "impressions", "operator": "GREATER_THAN", "value": "0"}],
+            }
+            insights = account.get_insights(fields=fields, params=params)
+
+            result = []
+            for row in insights:
+                actions = {}
+                for a in (row.get("actions") or []):
+                    actions[a["action_type"]] = int(a["value"])
+                result.append({
+                    "campaign_id": row.get("campaign_id", ""),
+                    "campaign_name": row.get("campaign_name", ""),
+                    "age": row.get("age", ""),
+                    "gender": row.get("gender", ""),
+                    "impressions": int(row.get("impressions", 0)),
+                    "clicks": int(row.get("clicks", 0)),
+                    "spend": float(row.get("spend", 0)),
+                    "reach": int(row.get("reach", 0)),
+                    "cpc": float(row.get("cpc", 0)) if row.get("cpc") else None,
+                    "ctr": float(row.get("ctr", 0)) if row.get("ctr") else None,
+                    "actions": actions,
+                })
+
+            return {"success": True, "data": result, "count": len(result)}
+        except Exception as exc:
+            logger.error("Demographic breakdown error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_placement_breakdown(self, days: int = 30) -> dict[str, Any]:
+        """Get performance breakdown by placement (feed, stories, reels, etc.)."""
+        logger.info("Fetching placement breakdown for %s", self.account_id)
+        try:
+            account = self._get_account()
+            since = (date.today() - timedelta(days=days)).isoformat()
+            until = date.today().isoformat()
+
+            fields = [
+                "campaign_id", "campaign_name",
+                "impressions", "clicks", "spend", "reach",
+                "cpc", "cpm", "ctr", "actions",
+            ]
+            params = {
+                "time_range": {"since": since, "until": until},
+                "breakdowns": ["publisher_platform", "platform_position"],
+                "level": "campaign",
+                "filtering": [{"field": "impressions", "operator": "GREATER_THAN", "value": "0"}],
+            }
+            insights = account.get_insights(fields=fields, params=params)
+
+            result = []
+            for row in insights:
+                actions = {}
+                for a in (row.get("actions") or []):
+                    actions[a["action_type"]] = int(a["value"])
+                result.append({
+                    "campaign_id": row.get("campaign_id", ""),
+                    "campaign_name": row.get("campaign_name", ""),
+                    "publisher_platform": row.get("publisher_platform", ""),
+                    "platform_position": row.get("platform_position", ""),
+                    "impressions": int(row.get("impressions", 0)),
+                    "clicks": int(row.get("clicks", 0)),
+                    "spend": float(row.get("spend", 0)),
+                    "reach": int(row.get("reach", 0)),
+                    "cpc": float(row.get("cpc", 0)) if row.get("cpc") else None,
+                    "cpm": float(row.get("cpm", 0)) if row.get("cpm") else None,
+                    "ctr": float(row.get("ctr", 0)) if row.get("ctr") else None,
+                    "actions": actions,
+                })
+
+            return {"success": True, "data": result, "count": len(result)}
+        except Exception as exc:
+            logger.error("Placement breakdown error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_ad_level_insights(self, days: int = 30, limit: int = 50) -> dict[str, Any]:
+        """Get ad-level performance insights (which individual ads perform best)."""
+        logger.info("Fetching ad-level insights for %s", self.account_id)
+        try:
+            account = self._get_account()
+            since = (date.today() - timedelta(days=days)).isoformat()
+            until = date.today().isoformat()
+
+            fields = [
+                "ad_id", "ad_name", "adset_id", "adset_name",
+                "campaign_id", "campaign_name",
+                "impressions", "clicks", "spend", "reach",
+                "cpc", "cpm", "ctr", "frequency",
+                "actions", "cost_per_action_type",
+            ]
+            params = {
+                "time_range": {"since": since, "until": until},
+                "level": "ad",
+                "filtering": [{"field": "impressions", "operator": "GREATER_THAN", "value": "0"}],
+                "sort": ["spend_descending"],
+                "limit": limit,
+            }
+            insights = account.get_insights(fields=fields, params=params)
+
+            result = []
+            for row in insights:
+                actions = {}
+                for a in (row.get("actions") or []):
+                    actions[a["action_type"]] = int(a["value"])
+                cost_per_action = {}
+                for cpa in (row.get("cost_per_action_type") or []):
+                    cost_per_action[cpa["action_type"]] = float(cpa["value"])
+
+                result.append({
+                    "ad_id": row.get("ad_id", ""),
+                    "ad_name": row.get("ad_name", ""),
+                    "adset_id": row.get("adset_id", ""),
+                    "adset_name": row.get("adset_name", ""),
+                    "campaign_id": row.get("campaign_id", ""),
+                    "campaign_name": row.get("campaign_name", ""),
+                    "impressions": int(row.get("impressions", 0)),
+                    "clicks": int(row.get("clicks", 0)),
+                    "spend": float(row.get("spend", 0)),
+                    "reach": int(row.get("reach", 0)),
+                    "frequency": float(row.get("frequency", 0)) if row.get("frequency") else None,
+                    "cpc": float(row.get("cpc", 0)) if row.get("cpc") else None,
+                    "cpm": float(row.get("cpm", 0)) if row.get("cpm") else None,
+                    "ctr": float(row.get("ctr", 0)) if row.get("ctr") else None,
+                    "actions": actions,
+                    "cost_per_action": cost_per_action,
+                })
+
+            return {"success": True, "data": result, "count": len(result)}
+        except Exception as exc:
+            logger.error("Ad-level insights error: %s", exc)
+            return {"success": False, "error": str(exc)}
+
+    def get_account_overview(self, days: int = 30) -> dict[str, Any]:
+        """Get high-level account overview: total spend, reach, frequency."""
+        logger.info("Fetching account overview for %s", self.account_id)
+        try:
+            account = self._get_account()
+            since = (date.today() - timedelta(days=days)).isoformat()
+            until = date.today().isoformat()
+
+            fields = [
+                "impressions", "clicks", "spend", "reach",
+                "cpc", "cpm", "ctr", "frequency",
+                "actions", "cost_per_action_type",
+            ]
+            params = {"time_range": {"since": since, "until": until}}
+            insights = account.get_insights(fields=fields, params=params)
+
+            for row in insights:
+                actions = {}
+                for a in (row.get("actions") or []):
+                    actions[a["action_type"]] = int(a["value"])
+                return {
+                    "success": True,
+                    "impressions": int(row.get("impressions", 0)),
+                    "clicks": int(row.get("clicks", 0)),
+                    "spend": float(row.get("spend", 0)),
+                    "reach": int(row.get("reach", 0)),
+                    "frequency": float(row.get("frequency", 0)) if row.get("frequency") else None,
+                    "cpc": float(row.get("cpc", 0)) if row.get("cpc") else None,
+                    "cpm": float(row.get("cpm", 0)) if row.get("cpm") else None,
+                    "ctr": float(row.get("ctr", 0)) if row.get("ctr") else None,
+                    "actions": actions,
+                    "period": f"{since} to {until}",
+                }
+
+            return {"success": True, "impressions": 0, "spend": 0, "note": "No data for period"}
+        except Exception as exc:
+            logger.error("Account overview error: %s", exc)
             return {"success": False, "error": str(exc)}
 
     # ── Token Management ────────────────────────────────────────

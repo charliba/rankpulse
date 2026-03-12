@@ -17,47 +17,66 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def _get_admin_client(service_account_key_path: str):
+def _get_admin_client(service_account_key_path: str | None = None, credentials=None):
     """Build GA4 Admin API client.
 
     Args:
         service_account_key_path: Path to the service account JSON key file.
+        credentials: Pre-built credentials (OAuth). If set, service_account_key_path is ignored.
 
     Returns:
         AnalyticsAdminServiceClient instance.
     """
     from google.analytics.admin_v1alpha import AnalyticsAdminServiceClient
-    from google.oauth2 import service_account
 
-    credentials = service_account.Credentials.from_service_account_file(
-        service_account_key_path,
+    if credentials is None:
+        from google.oauth2 import service_account
+        credentials = service_account.Credentials.from_service_account_file(
+            service_account_key_path,
+            scopes=["https://www.googleapis.com/auth/analytics.edit"],
+        )
+    return AnalyticsAdminServiceClient(credentials=credentials)
+
+
+def _build_admin_oauth_credentials(refresh_token: str):
+    """Build OAuth2 credentials from a refresh token for GA4 Admin."""
+    import os
+    from google.oauth2.credentials import Credentials
+    return Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=os.environ.get("GOOGLE_ADS_CLIENT_ID", ""),
+        client_secret=os.environ.get("GOOGLE_ADS_CLIENT_SECRET", ""),
         scopes=["https://www.googleapis.com/auth/analytics.edit"],
     )
-    return AnalyticsAdminServiceClient(credentials=credentials)
 
 
 class GA4AdminClient:
     """Client for GA4 Admin API — Key Events and property management.
 
-    Usage:
-        client = GA4AdminClient(
-            property_id="123456789",
-            service_account_key_path="credentials/ga4.json",
-        )
-        client.create_key_event("purchase")
-        events = client.list_key_events()
+    Usage with OAuth:
+        client = GA4AdminClient(property_id="123456789", refresh_token="...")
+
+    Usage with Service Account:
+        client = GA4AdminClient(property_id="123456789", service_account_key_path="credentials/ga4.json")
     """
 
-    def __init__(self, property_id: str, service_account_key_path: str) -> None:
+    def __init__(self, property_id: str, service_account_key_path: str = "", refresh_token: str = "") -> None:
         self.property_id = property_id
         self.service_account_key_path = service_account_key_path
+        self.refresh_token = refresh_token
         self._client = None
 
     @property
     def client(self):
         """Lazy-load the Admin API client."""
         if self._client is None:
-            self._client = _get_admin_client(self.service_account_key_path)
+            if self.refresh_token:
+                creds = _build_admin_oauth_credentials(self.refresh_token)
+                self._client = _get_admin_client(credentials=creds)
+            else:
+                self._client = _get_admin_client(self.service_account_key_path)
         return self._client
 
     @property

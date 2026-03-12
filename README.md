@@ -36,11 +36,18 @@ rankPulse/
 ├── static/                 ← CSS, images
 ├── docs/                   ← Documentação completa
 ├── deploy.py               ← Deploy via SSH (Paramiko)
+├── restart_gunicorn.py     ← Reiniciar Gunicorn
 ├── setup_nginx.py          ← Config Nginx
 ├── setup_postgresql.py     ← Setup PostgreSQL
-├── _setup_ssl.py           ← Certificado SSL (certbot)
-├── restart_gunicorn.py     ← Reiniciar Gunicorn
-├── verify_site.py          ← Health check
+├── verify_site.py          ← Health check completo
+├── verify_deploy.py        ← Verificar imports Google APIs
+├── _check_errors.py        ← Consultar log de erros (VPS)
+├── _check_nginx.py         ← Ler config nginx (VPS)
+├── _diag_aura_ai.py        ← Testar providers AI
+├── _diag_aura7.py          ← Testar endpoints Aura
+├── _scan_bugs.py           ← Scanner de bugs/logs (VPS)
+├── _scan_feedback.py       ← Triagem de feedback/bugs
+├── _archive/               ← Scripts descontinuados
 ├── manage.py               ← Django management
 └── requirements.txt        ← Dependências Python
 ```
@@ -94,15 +101,38 @@ python manage.py runserver
 ```powershell
 # Primeiro deploy:
 python setup_nginx.py       # Configura Nginx
-python deploy.py            # Deploy do código
 python setup_postgresql.py  # Configura PostgreSQL
-python _setup_ssl.py        # SSL/HTTPS
+python deploy.py            # Deploy do código
 
 # Deploys seguintes:
 python deploy.py
+
+# Health check:
+python verify_site.py
 ```
 
 Ver [docs/DEPLOY.md](docs/DEPLOY.md) para detalhes.
+
+---
+
+## 🛠️ Scripts
+
+| Script | Tipo | Descrição |
+|--------|------|-----------|
+| `deploy.py` | Deploy | Deploy principal: SFTP + migrate + restart Gunicorn |
+| `restart_gunicorn.py` | Deploy | Reinicia Gunicorn (port 8002, 2 workers) |
+| `setup_nginx.py` | Setup | Configura server block nginx (1ª vez) |
+| `setup_postgresql.py` | Setup | Instala e configura PostgreSQL (1ª vez) |
+| `verify_site.py` | Verificação | Health check completo (Gunicorn, nginx, SSL, DNS, HTTP) |
+| `verify_deploy.py` | Verificação | Verifica imports Google APIs + migrations |
+| `_check_errors.py` | Diagnóstico | Consulta SystemErrorLog no banco (últimos 30 erros) |
+| `_check_nginx.py` | Diagnóstico | Lê configs nginx do VPS |
+| `_diag_aura_ai.py` | Diagnóstico | Testa configuração de providers AI (OpenAI key, etc.) |
+| `_diag_aura7.py` | Diagnóstico | Teste completo de endpoints Aura (Django test client) |
+| `_scan_bugs.py` | Diagnóstico | Scanner interativo de bugs e logs do VPS |
+| `_scan_feedback.py` | Diagnóstico | Triagem de feedback/bug reports dos usuários |
+
+> Scripts descontinuados estão em `_archive/` (19 scripts de debug iterativo, fixes pontuais e deploys parciais).
 
 ---
 

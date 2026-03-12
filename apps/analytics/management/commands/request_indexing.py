@@ -52,10 +52,16 @@ class Command(BaseCommand):
         site_url = site.gsc_site_url or site.url
         base_url = site.url.rstrip("/")
 
-        client = SearchConsoleClient(
-            service_account_key_path=key_path,
-            site_url=site_url,
-        )
+        if site.google_refresh_token:
+            client = SearchConsoleClient(
+                site_url=site_url,
+                refresh_token=site.google_refresh_token,
+            )
+        else:
+            client = SearchConsoleClient(
+                service_account_key_path=key_path,
+                site_url=site_url,
+            )
 
         # Build URL list
         if all_pages:

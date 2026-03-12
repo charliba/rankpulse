@@ -46,6 +46,12 @@ credentials/
 # Logs
 logs/
 
+# Cache (FileBasedCache)
+cache/
+
+# Task queue
+huey.db
+
 # Backups (server-side)
 backups/
 

@@ -43,10 +43,16 @@ class Command(BaseCommand):
             site_url = site.gsc_site_url or site.url
             self.stdout.write(f"\n🗺️  Site: {site.name} ({site_url})")
 
-            client = SearchConsoleClient(
-                service_account_key_path=key_path,
-                site_url=site_url,
-            )
+            if site.google_refresh_token:
+                client = SearchConsoleClient(
+                    site_url=site_url,
+                    refresh_token=site.google_refresh_token,
+                )
+            else:
+                client = SearchConsoleClient(
+                    service_account_key_path=key_path,
+                    site_url=site_url,
+                )
 
             if list_only:
                 result = client.list_sitemaps()

@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Dashboard{% endblock %} — RankPulse</title>
+    <meta name="description" content="{% block meta_description %}RankPulse — Plataforma de gestão de tráfego orgânico, SEO e analytics.{% endblock %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="pt_BR">
+    <meta property="og:site_name" content="RankPulse">
 
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +44,7 @@
     <!-- Custom styles -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/aura-chat.css' %}">
+    <style>[x-cloak]{display:none !important}</style>
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -91,6 +98,141 @@
     <script src="{% static 'js/app.js' %}"></script>
     <!-- Aura Chat Widget -->
     <script src="{% static 'js/aura-chat.js' %}" defer></script>
+
     {% block extra_js %}{% endblock %}
+
+    <!-- Feedback Bug Report Widget -->
+    {% if user.is_authenticated %}
+    <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-2"></div>
+    <div x-data="feedbackWidget()" x-cloak>
+        <button @click="open = true"
+                class="fixed bottom-6 left-6 z-50 w-12 h-12 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110"
+                title="Reportar Bug">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+        </button>
+        <div x-show="open" x-transition class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60" @click.self="close()">
+            <div class="bg-gray-900 text-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" @click.stop>
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+                    <h3 class="text-lg font-semibold">Reportar Problema</h3>
+                    <button @click="close()" class="text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form @submit.prevent="submit()" class="px-6 py-5 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Categoria</label>
+                        <select x-model="category" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="bug">Bug</option>
+                            <option value="feature">Sugestão</option>
+                            <option value="ux">Usabilidade</option>
+                            <option value="performance">Performance</option>
+                            <option value="other">Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Título</label>
+                        <input type="text" x-model="title" required maxlength="300" placeholder="Resumo do problema..."
+                               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Descrição</label>
+                        <textarea x-model="description" required rows="4" placeholder="Descreva o que aconteceu... (cole imagens com Ctrl+V)"
+                                  @paste="handlePaste($event)"
+                                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Seu e-mail <span class="text-gray-500">(opcional — para receber atualizações)</span></label>
+                        <input type="email" x-model="email" placeholder="seu@email.com"
+                               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Imagens (opcional — múltiplas)</label>
+                        <input type="file" accept="image/*" multiple @change="previewFiles($event)"
+                               class="w-full text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-700 file:text-gray-200 file:cursor-pointer hover:file:bg-gray-600">
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <template x-for="(pv, idx) in previews" :key="idx">
+                                <div class="relative group">
+                                    <img :src="pv" class="h-20 rounded-lg border border-gray-700 object-cover">
+                                    <button type="button" @click="removeImage(idx)"
+                                        class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" @click="close()" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancelar</button>
+                        <button type="submit" :disabled="sending"
+                                class="px-5 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+                            <span x-show="!sending">Enviar</span>
+                            <span x-show="sending">Enviando...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+    function feedbackWidget() {
+        return {
+            open: false, sending: false, category: 'bug', title: '', description: '', email: '',
+            imageFiles: [], previews: [],
+            close() { this.open = false; this.title = ''; this.description = ''; this.category = 'bug'; this.email = ''; this.imageFiles = []; this.previews = []; },
+            previewFiles(e) {
+                for (const f of e.target.files) {
+                    this.imageFiles.push(f);
+                    this.previews.push(URL.createObjectURL(f));
+                }
+            },
+            handlePaste(e) {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (const item of items) {
+                    if (item.type.startsWith('image/')) {
+                        e.preventDefault();
+                        const f = item.getAsFile();
+                        if (f) { this.imageFiles.push(f); this.previews.push(URL.createObjectURL(f)); this.showToast('📷 Imagem colada!', 'success'); }
+                    }
+                }
+            },
+            removeImage(idx) { this.imageFiles.splice(idx, 1); this.previews.splice(idx, 1); },
+            async submit() {
+                this.sending = true;
+                try {
+                    const fd = new FormData();
+                    fd.append('title', this.title);
+                    fd.append('description', this.description);
+                    fd.append('category', this.category);
+                    if (this.email) fd.append('email', this.email);
+                    fd.append('page_url', window.location.href);
+                    if (this.imageFiles.length > 0) fd.append('screenshot', this.imageFiles[0]);
+                    for (const f of this.imageFiles) fd.append('images', f);
+                    fd.append('error_context', JSON.stringify({
+                        url: window.location.href,
+                        timestamp: new Date().toISOString(),
+                        screen: window.innerWidth + 'x' + window.innerHeight,
+                        userAgent: navigator.userAgent,
+                        last_js_errors: (window.__rkp_errors || []).slice(-5),
+                    }));
+                    const csrfToken = document.body.getAttribute('hx-headers')?.match(/"X-CSRFToken":\s*"([^"]+)"/)?.[1] || '';
+                    const resp = await fetch('/chat/feedback/submit/', { method: 'POST', headers: {'X-CSRFToken': csrfToken}, body: fd });
+                    const data = await resp.json();
+                    if (resp.ok && data.success) { this.showToast('Feedback enviado! Obrigado.', 'success'); this.close(); }
+                    else { this.showToast(data.error || 'Erro ao enviar', 'error'); }
+                } catch (err) { this.showToast('Erro de rede', 'error'); }
+                finally { this.sending = false; }
+            },
+            showToast(msg, type) {
+                let c = document.getElementById('toast-container');
+                if (!c) { c = document.createElement('div'); c.id = 'toast-container'; c.className = 'fixed top-4 right-4 z-[100] space-y-2'; document.body.appendChild(c); }
+                const d = document.createElement('div');
+                d.className = 'px-4 py-3 rounded-lg shadow-lg text-white text-sm ' + (type === 'success' ? 'bg-green-600' : 'bg-red-600');
+                d.textContent = msg; c.appendChild(d); setTimeout(() => d.remove(), 3500);
+            }
+        }
+    }
+    </script>
+    {% endif %}
 </body>
 </html>

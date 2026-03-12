@@ -1,14 +1,20 @@
 """
-Trafic Provider — URL Configuration
+RankPulse — URL Configuration
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
-from apps.core.views import landing_view, privacy_view, register, terms_view
+from apps.core.views import landing_view, login_view, privacy_view, register, terms_view
 from apps.channels.views import meta_oauth_callback, google_ads_oauth_callback
+from apps.core.seo_views import robots_txt, sitemap_xml
 
 urlpatterns = [
+    # SEO
+    path("robots.txt", robots_txt, name="robots_txt"),
+    path("sitemap.xml", sitemap_xml, name="sitemap_xml"),
     # Public pages
     path("", landing_view, name="landing"),
     path("privacy/", privacy_view, name="privacy"),
@@ -20,7 +26,7 @@ urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
     # Auth
-    path("login/", auth_views.LoginView.as_view(template_name="pages/auth.html"), name="login"),
+    path("login/", login_view, name="login"),
     path("logout/", auth_views.LogoutView.as_view(next_page="/login/"), name="logout"),
     path("register/", register, name="register"),
     # API
@@ -32,6 +38,8 @@ urlpatterns = [
     path("api/channels/", include("apps.channels.urls", namespace="channels")),
     # Chat Aura
     path("chat/", include("apps.chat_support.urls", namespace="chat_support")),
+    # Payments / Stripe
+    path("api/", include("apps.payments.urls", namespace="payments")),
     # Dashboard
     path("", include("apps.core.urls", namespace="core")),
 ]
@@ -40,3 +48,6 @@ urlpatterns = [
 admin.site.site_header = "RankPulse"
 admin.site.site_title = "RankPulse Admin"
 admin.site.index_title = "Painel de Administracao de Trafego"
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

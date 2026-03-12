@@ -48,9 +48,9 @@ def _get_ads_manager(channel: Channel):
 
     return GoogleAdsManager(
         customer_id=cred.customer_id,
-        developer_token=cred.developer_token,
-        client_id=cred.client_id,
-        client_secret=cred.client_secret,
+        developer_token=settings.GOOGLE_ADS_DEVELOPER_TOKEN or cred.developer_token,
+        client_id=settings.GOOGLE_ADS_CLIENT_ID or cred.client_id,
+        client_secret=settings.GOOGLE_ADS_CLIENT_SECRET or cred.client_secret,
         refresh_token=cred.refresh_token,
         login_customer_id=cred.login_customer_id,
     )
@@ -221,11 +221,121 @@ def google_ads_oauth_callback(request):
     if not cred.client_secret:
         cred.client_secret = client_secret
     cred.refresh_token = refresh_token
-    cred.save(update_fields=["client_id", "client_secret", "refresh_token"])
+    # Store access_token temporarily for account listing
+    cred.extra = cred.extra or {}
+    cred.extra["google_access_token"] = token_data.get("access_token", "")
+    cred.save(update_fields=["client_id", "client_secret", "refresh_token", "extra"])
 
     logger.info("Google Ads refresh token saved for channel %s (pk=%d)", channel.name, channel.pk)
-    messages.success(request, "Google Ads conectado com sucesso! Refresh Token salvo.")
-    return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    # Redirect to account selection (developer token is platform-level from settings)
+    return redirect("channels:google_ads_select_account", channel_id=channel.pk)
+
+
+@login_required
+def google_ads_select_account(request, channel_id: int):
+    """Let user choose which Google Ads customer account to use."""
+    channel = _get_user_channel(request, channel_id)
+    cred = ChannelCredential.objects.filter(channel=channel).first()
+
+    if not cred or not cred.refresh_token:
+        messages.error(request, "Conecte o Google Ads via OAuth primeiro.")
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    if request.method == "POST":
+        customer_id = request.POST.get("customer_id", "").strip()
+        login_customer_id = request.POST.get("login_customer_id", "").strip()
+        if customer_id:
+            cred.customer_id = customer_id
+            if login_customer_id:
+                cred.login_customer_id = login_customer_id
+            cred.save(update_fields=["customer_id", "login_customer_id"])
+            messages.success(request, f"Conta Google Ads {customer_id} selecionada!")
+        else:
+            messages.error(request, "Selecione uma conta.")
+            return redirect("channels:google_ads_select_account", channel_id=channel.pk)
+        return redirect("channels:channel_credentials", channel_id=channel.pk)
+
+    # GET — list accessible customers using the google-ads Python client (gRPC)
+    accounts = []
+    error_msg = ""
+    developer_token = cred.developer_token or settings.GOOGLE_ADS_DEVELOPER_TOKEN or ""
+    client_id = cred.client_id or settings.GOOGLE_ADS_CLIENT_ID
+    client_secret = cred.client_secret or settings.GOOGLE_ADS_CLIENT_SECRET
+
+    if developer_token and cred.refresh_token:
+        try:
+            from google.ads.googleads.client import GoogleAdsClient
+
+            config = {
+                "developer_token": developer_token,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": cred.refresh_token,
+                "use_proto_plus": True,
+            }
+            login_cid = (cred.login_customer_id or "").replace("-", "")
+            if login_cid:
+                config["login_customer_id"] = login_cid
+
+            ads_client = GoogleAdsClient.load_from_dict(config)
+            customer_service = ads_client.get_service("CustomerService")
+
+            # List all accessible customer IDs
+            response = customer_service.list_accessible_customers()
+            resource_names = response.resource_names
+
+            # Fetch details for each customer
+            ga_service = ads_client.get_service("GoogleAdsService")
+            for rn in resource_names:
+                cid = rn.split("/")[-1]
+                try:
+                    query = """
+                        SELECT customer.id, customer.descriptive_name,
+                               customer.manager, customer.status
+                        FROM customer LIMIT 1
+                    """
+                    detail_response = ga_service.search(customer_id=cid, query=query)
+                    for row in detail_response:
+                        formatted_id = cid
+                        if len(cid) == 10:
+                            formatted_id = f"{cid[:3]}-{cid[3:6]}-{cid[6:]}"
+                        accounts.append({
+                            "id": formatted_id,
+                            "raw_id": cid,
+                            "name": row.customer.descriptive_name or f"Conta {cid}",
+                            "is_manager": row.customer.manager,
+                            "status": str(row.customer.status.name) if row.customer.status else "",
+                        })
+                        break
+                except Exception:
+                    formatted_id = cid
+                    if len(cid) == 10:
+                        formatted_id = f"{cid[:3]}-{cid[3:6]}-{cid[6:]}"
+                    accounts.append({
+                        "id": formatted_id,
+                        "raw_id": cid,
+                        "name": f"Conta {cid}",
+                        "is_manager": False,
+                        "status": "",
+                    })
+
+        except Exception as exc:
+            logger.exception("Failed to list Google Ads accounts via gRPC")
+            error_msg = f"Erro ao listar contas: {exc}"
+    elif not developer_token:
+        error_msg = "Developer Token não configurado na plataforma. Contate o administrador do RankPulse."
+    else:
+        error_msg = "Refresh token ausente. Tente reconectar via OAuth."
+
+    return render(request, "channels/google_ads_select_account.html", {
+        "page_title": f"Selecionar Conta — {channel.name}",
+        "channel": channel,
+        "project": channel.project,
+        "accounts": accounts,
+        "current_customer_id": cred.customer_id,
+        "error_msg": error_msg,
+    })
 
 
 @login_required
@@ -293,21 +403,31 @@ def google_ads_test_connection(request, channel_id: int):
     """Test the Google Ads API connection with current channel credentials."""
     channel = _get_user_channel(request, channel_id)
 
-    if not channel.is_configured:
+    try:
+        cred = channel.credentials
+    except ChannelCredential.DoesNotExist:
         return JsonResponse(
-            {"error": "Preencha todas as credenciais do Google Ads primeiro."},
+            {"error": "Nenhuma credencial encontrada. Conecte via OAuth primeiro."},
             status=400,
         )
 
-    cred = channel.credentials
+    if not cred.refresh_token:
+        return JsonResponse(
+            {"error": "Refresh Token ausente. Clique em 'Conectar com Google' primeiro."},
+            status=400,
+        )
+
     import requests as http_requests
+
+    client_id = settings.GOOGLE_ADS_CLIENT_ID or cred.client_id
+    client_secret = settings.GOOGLE_ADS_CLIENT_SECRET or cred.client_secret
 
     try:
         resp = http_requests.post(
             GOOGLE_TOKEN_URI,
             data={
-                "client_id": cred.client_id,
-                "client_secret": cred.client_secret,
+                "client_id": client_id,
+                "client_secret": client_secret,
                 "refresh_token": cred.refresh_token,
                 "grant_type": "refresh_token",
             },
@@ -674,6 +794,112 @@ def meta_select_account(request, channel_id: int):
         "accounts": accounts,
         "current_account_id": cred.account_id or "",
     })
+
+
+# ── Campaign Optimizer ─────────────────────────────────────────
+
+@login_required
+def optimizer_dashboard(request, channel_id):
+    """Main optimizer page — config, status, action log."""
+    channel = _get_user_channel(request, channel_id)
+    from .models import OptimizerAction, OptimizerConfig
+    config, _ = OptimizerConfig.objects.get_or_create(channel=channel)
+    recent_actions = OptimizerAction.objects.filter(
+        channel=channel
+    ).order_by("-executed_at")[:50]
+
+    projects = Project.objects.filter(owner=request.user, is_active=True)
+    return render(request, "channels/optimizer.html", {
+        "page_title": f"Optimizer — {channel.name}",
+        "page_id": "optimizer",
+        "channel": channel,
+        "config": config,
+        "recent_actions": recent_actions,
+        "projects": projects,
+    })
+
+
+@login_required
+@require_POST
+def optimizer_config_save(request, channel_id):
+    """Save optimizer config from form POST."""
+    channel = _get_user_channel(request, channel_id)
+    from .models import OptimizerConfig
+    config, _ = OptimizerConfig.objects.get_or_create(channel=channel)
+
+    config.enabled = request.POST.get("enabled") == "on"
+    config.mode = request.POST.get("mode", "monitor")
+    config.optimize_by = request.POST.get("optimize_by", "cpa")
+
+    cpa_max = request.POST.get("cpa_max", "").strip()
+    config.cpa_max = cpa_max if cpa_max else None
+    roas_min = request.POST.get("roas_min", "").strip()
+    config.roas_min = roas_min if roas_min else None
+    sale_value = request.POST.get("sale_value", "").strip()
+    config.sale_value = sale_value if sale_value else None
+
+    config.pause_behavior = request.POST.get("pause_behavior", "rigid")
+    config.scale_behavior = request.POST.get("scale_behavior", "conservative")
+
+    budget_cap = request.POST.get("daily_budget_cap", "").strip()
+    config.daily_budget_cap = budget_cap if budget_cap else None
+    monthly_limit = request.POST.get("monthly_budget_limit", "").strip()
+    config.monthly_budget_limit = monthly_limit if monthly_limit else None
+
+    lookback = request.POST.get("lookback_days", "7")
+    config.lookback_days = int(lookback) if lookback.isdigit() else 7
+    min_spend = request.POST.get("min_spend_to_evaluate", "").strip()
+    config.min_spend_to_evaluate = min_spend if min_spend else "0"
+
+    config.save()
+    messages.success(request, "Configuração do Optimizer salva!")
+    return redirect("channels:optimizer_dashboard", channel_id=channel.pk)
+
+
+@login_required
+def optimizer_status(request, channel_id):
+    """AJAX: get current optimizer evaluation for campaigns."""
+    channel = _get_user_channel(request, channel_id)
+    from .optimizer import CampaignOptimizer
+    optimizer = CampaignOptimizer(channel)
+    status = optimizer.get_status()
+    return JsonResponse(status)
+
+
+@login_required
+@require_POST
+def optimizer_run(request, channel_id):
+    """Trigger an on-demand optimizer cycle (via Huey)."""
+    channel = _get_user_channel(request, channel_id)
+    from .tasks import run_optimizer_cycle
+    run_optimizer_cycle(channel.pk)
+    messages.success(request, "Ciclo de otimização iniciado!")
+    return redirect("channels:optimizer_dashboard", channel_id=channel.pk)
+
+
+@login_required
+def optimizer_actions_json(request, channel_id):
+    """AJAX: return recent actions as JSON."""
+    channel = _get_user_channel(request, channel_id)
+    from .models import OptimizerAction
+    limit = int(request.GET.get("limit", "50"))
+    limit = min(limit, 200)
+    actions = OptimizerAction.objects.filter(
+        channel=channel
+    ).order_by("-executed_at")[:limit]
+    data = [
+        {
+            "id": a.pk,
+            "action_type": a.action_type,
+            "target_type": a.target_type,
+            "target_name": a.target_name,
+            "reason": a.reason,
+            "mode": a.mode,
+            "executed_at": a.executed_at.isoformat(),
+        }
+        for a in actions
+    ]
+    return JsonResponse({"actions": data})
 
 
 @login_required

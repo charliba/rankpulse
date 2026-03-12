@@ -1,7 +1,11 @@
-"""Core admin — Project, Site, and KPI management."""
+"""Core admin — Project, Site, KPI, and Expert Knowledge management."""
 from django.contrib import admin
 
-from .models import GA4EventDefinition, KPIGoal, Project, Site, WeeklySnapshot
+from .models import (
+    AuditConfig, AuditRecommendation, AuditReport,
+    ExpertArticle, GA4EventDefinition, KPIGoal, Project,
+    ProjectScore, Site, SystemErrorLog, WeeklySnapshot,
+)
 
 
 class SiteInline(admin.TabularInline):
@@ -99,3 +103,90 @@ class WeeklySnapshotAdmin(admin.ModelAdmin):
     list_filter = ["site"]
     date_hierarchy = "week_start"
     readonly_fields = ["created_at"]
+
+
+@admin.register(AuditReport)
+class AuditReportAdmin(admin.ModelAdmin):
+    list_display = ["id", "project", "status", "overall_score", "duration_seconds", "created_at"]
+    list_filter = ["status", "project"]
+    readonly_fields = ["created_at"]
+
+
+@admin.register(AuditRecommendation)
+class AuditRecommendationAdmin(admin.ModelAdmin):
+    list_display = ["title", "report", "platform", "category", "impact", "status"]
+    list_filter = ["platform", "impact", "status"]
+    search_fields = ["title"]
+
+
+@admin.register(AuditConfig)
+class AuditConfigAdmin(admin.ModelAdmin):
+    list_display = ["project", "ai_depth", "ai_language", "source_meta_ads", "source_google_ads", "source_ga4", "source_seo"]
+    list_filter = ["ai_depth", "ai_language"]
+
+
+@admin.register(ExpertArticle)
+class ExpertArticleAdmin(admin.ModelAdmin):
+    """Admin for expert knowledge articles — auto-embeds on save."""
+
+    list_display = ["title", "category", "chunk_count", "is_active", "embedded_at", "created_at"]
+    list_filter = ["category", "is_active"]
+    search_fields = ["title", "content"]
+    readonly_fields = ["chunk_count", "embedded_at", "created_at", "updated_at"]
+    fieldsets = [
+        (None, {"fields": ["title", "source_url", "category", "is_active"]}),
+        ("Conteúdo", {"fields": ["content"]}),
+        ("Embedding", {"fields": ["chunk_count", "embedded_at", "created_at", "updated_at"]}),
+    ]
+    actions = ["embed_selected"]
+
+    def save_model(self, request, obj, form, change):
+        obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+        # Auto-embed after save
+        if obj.is_active:
+            try:
+                from .knowledge_base import embed_article
+                embed_article(obj.id)
+                self.message_user(request, f"✅ Artigo embeddado com {obj.chunk_count} chunks.")
+            except Exception as e:
+                self.message_user(request, f"⚠️ Erro ao embeddar: {e}", level="warning")
+
+    def delete_model(self, request, obj):
+        try:
+            from .knowledge_base import remove_article
+            remove_article(obj.id)
+        except Exception:
+            pass
+        super().delete_model(request, obj)
+
+    @admin.action(description="Embeddar artigos selecionados no ChromaDB")
+    def embed_selected(self, request, queryset):
+        from .knowledge_base import embed_article
+        success, failed = 0, 0
+        for article in queryset.filter(is_active=True):
+            try:
+                embed_article(article.id)
+                success += 1
+            except Exception:
+                failed += 1
+        self.message_user(request, f"✅ {success} embeddados, {failed} falharam.")
+
+
+@admin.register(SystemErrorLog)
+class SystemErrorLogAdmin(admin.ModelAdmin):
+    list_display = ["timestamp", "severity", "error_type", "error_message_short", "user", "view_name", "resolved"]
+    list_filter = ["severity", "error_type", "resolved"]
+    search_fields = ["error_message", "view_name", "url_path"]
+    readonly_fields = ["timestamp"]
+    list_editable = ["resolved"]
+
+    def error_message_short(self, obj):
+        return obj.error_message[:80]
+    error_message_short.short_description = "Mensagem"
+
+
+@admin.register(ProjectScore)
+class ProjectScoreAdmin(admin.ModelAdmin):
+    list_display = ["project", "overall_score", "audit_score", "earned_points", "pending_points", "total_possible"]
+    readonly_fields = ["last_calculated_at", "created_at", "updated_at"]

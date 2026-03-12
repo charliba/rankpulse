@@ -1,0 +1,282 @@
+{% extends "admin_dev/base_admin.html" %}
+
+{% block title %}Visão Geral{% endblock %}
+
+{% block content %}
+<div x-data="adminOverview()">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Visão Geral do Sistema</h1>
+            <p class="text-sm text-gray-500 mt-1">Resumo de atividade e saúde da plataforma</p>
+        </div>
+        <span class="text-xs text-gray-400">Atualizado: {{ now|date:"d/m/Y H:i" }}</span>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <!-- Users -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.total_users }}</p>
+                    <p class="text-xs text-gray-500">Usuários <span class="text-green-600 font-medium">{{ stats.active_users }} ativos</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.total_projects }}</p>
+                    <p class="text-xs text-gray-500">Projetos <span class="text-cyan-600 font-medium">{{ stats.active_projects }} ativos</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audits -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.total_audits }}</p>
+                    <p class="text-xs text-gray-500">Auditorias <span class="text-emerald-600 font-medium">{{ stats.audits_30d }} últimos 30d</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Errors -->
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.96-.833-2.73 0L4.07 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.unresolved_errors }}</p>
+                    <p class="text-xs text-gray-500">Erros pendentes <span class="text-amber-600 font-medium">{{ stats.errors_24h }} última 24h</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Row: Score + Recommendations -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+        <!-- Average Audit Score -->
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4">Score Médio (Auditorias)</h3>
+            <div class="flex items-center justify-center">
+                <div class="relative w-32 h-32">
+                    <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="10" fill="none"/>
+                        <circle cx="60" cy="60" r="50" stroke="{{ stats.avg_score_color }}" stroke-width="10" fill="none"
+                                stroke-dasharray="{{ stats.avg_score_dash }} 314" stroke-linecap="round"/>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-3xl font-bold text-gray-900">{{ stats.avg_score|default:"—" }}</span>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center text-xs text-gray-400 mt-3">Baseado em {{ stats.scored_audits }} auditorias com score</p>
+        </div>
+
+        <!-- Recommendation Stats -->
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4">Recomendações</h3>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Total geradas</span>
+                    <span class="text-sm font-bold text-gray-900">{{ stats.total_recs }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Aplicadas</span>
+                    <span class="text-sm font-bold text-green-600">{{ stats.applied_recs }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Pendentes</span>
+                    <span class="text-sm font-bold text-amber-600">{{ stats.pending_recs }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Dismissadas</span>
+                    <span class="text-sm font-bold text-gray-400">{{ stats.dismissed_recs }}</span>
+                </div>
+                {% if stats.total_recs > 0 %}
+                <div class="pt-2 border-t border-gray-100">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: {{ stats.recs_applied_pct }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">{{ stats.recs_applied_pct }}% aplicadas</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Channels / Integrations -->
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-4">Integrações Ativas</h3>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span class="text-xs font-bold text-blue-600">G</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-800">Google Ads</p>
+                        <p class="text-xs text-gray-400">{{ stats.google_ads_channels }} projeto{{ stats.google_ads_channels|pluralize:"s" }}</p>
+                    </div>
+                    <span class="w-2 h-2 rounded-full {% if stats.google_ads_channels > 0 %}bg-green-500{% else %}bg-gray-300{% endif %}"></span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span class="text-xs font-bold text-blue-700">M</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-800">Meta Ads</p>
+                        <p class="text-xs text-gray-400">{{ stats.meta_ads_channels }} projeto{{ stats.meta_ads_channels|pluralize:"s" }}</p>
+                    </div>
+                    <span class="w-2 h-2 rounded-full {% if stats.meta_ads_channels > 0 %}bg-green-500{% else %}bg-gray-300{% endif %}"></span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <span class="text-xs font-bold text-green-700">GA</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-800">GA4 / GSC</p>
+                        <p class="text-xs text-gray-400">{{ stats.ga4_sites }} site{{ stats.ga4_sites|pluralize:"s" }}</p>
+                    </div>
+                    <span class="w-2 h-2 rounded-full {% if stats.ga4_sites > 0 %}bg-green-500{% else %}bg-gray-300{% endif %}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two-column: Recent Activity + Recent Errors -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Recent Audits -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700">Últimas Auditorias</h3>
+                <a href="{% url 'core:admin_audits' %}" class="text-xs text-indigo-600 hover:underline">Ver todas</a>
+            </div>
+            <div class="divide-y divide-gray-50">
+                {% for audit in recent_audits %}
+                <div class="px-5 py-3 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold
+                                {% if audit.overall_score >= 70 %}bg-green-100 text-green-700
+                                {% elif audit.overall_score >= 40 %}bg-amber-100 text-amber-700
+                                {% elif audit.overall_score %}bg-red-100 text-red-700
+                                {% else %}bg-gray-100 text-gray-400{% endif %}">
+                        {{ audit.overall_score|default:"—" }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800 truncate">{{ audit.project.name }}</p>
+                        <p class="text-xs text-gray-400">{{ audit.created_at|date:"d/m H:i" }} · {{ audit.recommendations.count }} recs</p>
+                    </div>
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium
+                          {% if audit.status == 'done' %}bg-green-100 text-green-700
+                          {% elif audit.status == 'running' %}bg-blue-100 text-blue-700
+                          {% else %}bg-red-100 text-red-700{% endif %}">
+                        {{ audit.status }}
+                    </span>
+                </div>
+                {% empty %}
+                <div class="px-5 py-8 text-center text-sm text-gray-400">Nenhuma auditoria ainda</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Errors -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700">Últimos Erros</h3>
+                <a href="{% url 'core:admin_errors' %}" class="text-xs text-red-600 hover:underline">Ver todos</a>
+            </div>
+            <div class="divide-y divide-gray-50">
+                {% for err in recent_errors %}
+                <div class="px-5 py-3 flex items-center gap-3">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0
+                          {% if err.severity == 'critical' %}bg-red-500
+                          {% elif err.severity == 'error' %}bg-orange-500
+                          {% elif err.severity == 'warning' %}bg-amber-400
+                          {% else %}bg-blue-400{% endif %}"></span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-gray-800 truncate">{{ err.error_message|truncatechars:60 }}</p>
+                        <p class="text-xs text-gray-400">{{ err.timestamp|date:"d/m H:i" }} · {{ err.get_error_type_display }}</p>
+                    </div>
+                    {% if not err.resolved %}
+                    <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-600">aberto</span>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="px-5 py-8 text-center text-sm text-gray-400">Nenhum erro registrado</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="mt-5 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700">Últimos Usuários Cadastrados</h3>
+            <a href="{% url 'core:admin_users' %}" class="text-xs text-indigo-600 hover:underline">Ver todos</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <tr>
+                        <th class="px-5 py-3 text-left">Usuário</th>
+                        <th class="px-5 py-3 text-left">Email</th>
+                        <th class="px-5 py-3 text-left">Cadastro</th>
+                        <th class="px-5 py-3 text-left">Último Login</th>
+                        <th class="px-5 py-3 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for u in recent_users %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600">
+                                    {{ u.username|first|upper }}
+                                </div>
+                                <span class="font-medium text-gray-800">{{ u.username }}</span>
+                                {% if u.is_superuser %}<span class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium ml-1">SUPER</span>{% endif %}
+                                {% if u.is_staff %}<span class="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded font-medium ml-1">STAFF</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-5 py-3 text-gray-500">{{ u.email|default:"—" }}</td>
+                        <td class="px-5 py-3 text-gray-400">{{ u.date_joined|date:"d/m/Y" }}</td>
+                        <td class="px-5 py-3 text-gray-400">{{ u.last_login|date:"d/m H:i"|default:"nunca" }}</td>
+                        <td class="px-5 py-3 text-center">
+                            <span class="inline-flex w-2 h-2 rounded-full {% if u.is_active %}bg-green-500{% else %}bg-gray-300{% endif %}"></span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="px-5 py-8 text-center text-gray-400">Nenhum usuário</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function adminOverview() { return {} }
+</script>
+{% endblock %}

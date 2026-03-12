@@ -1,0 +1,64 @@
+{% load custom_filters %}<!-- Organic Card Partial (GA4 + GSC) — loaded via HTMX -->
+{% if data.error and not data.sessions and not data.gsc_clicks %}
+<div class="text-center py-4">
+    <p class="text-sm text-gray-400">Conecte GA4 ou GSC para ver métricas orgânicas.</p>
+    <a href="{% url 'core:project_sources' project.id %}" class="text-xs text-primary hover:underline mt-1 inline-block">Configurar Fontes</a>
+</div>
+{% else %}
+<div class="space-y-4">
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-2 gap-3">
+        <div>
+            <p class="text-xs text-gray-500">Sessões ({{ data.days }}d)</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.sessions|default:"0" }}</p>
+            {% if data.sessions_prev > 0 %}
+            <p class="text-xs {% if data.sessions > data.sessions_prev %}text-green-600{% else %}text-red-500{% endif %}">
+                {% if data.sessions > data.sessions_prev %}&#9650;{% else %}&#9660;{% endif %}
+                vs {{ data.sessions_prev }} anterior
+            </p>
+            {% endif %}
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">Cliques GSC</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.gsc_clicks|default:"0" }}</p>
+            {% if data.gsc_clicks_prev > 0 %}
+            <p class="text-xs {% if data.gsc_clicks > data.gsc_clicks_prev %}text-green-600{% else %}text-red-500{% endif %}">
+                vs {{ data.gsc_clicks_prev }} anterior
+            </p>
+            {% endif %}
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">Impressões</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.gsc_impressions|default:"0" }}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500">CTR / Posição</p>
+            <p class="text-lg font-bold text-gray-900">{{ data.gsc_ctr }}% · {{ data.gsc_position }}</p>
+        </div>
+    </div>
+
+    {% if data.top_queries %}
+    <div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Top Queries</p>
+        <div class="space-y-1">
+            {% for q in data.top_queries %}
+            <div class="flex items-center justify-between text-xs">
+                <span class="text-gray-700 truncate max-w-[60%]">{{ q.query }}</span>
+                <span class="text-gray-500">{{ q.clicks }} cliques</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timestamp -->
+    {% if data.fetched_at %}
+    <p class="text-xs text-gray-300 text-right">Atualizado às {{ data.fetched_at }}</p>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- JSON bridge for Alpine.js dashboard -->
+<script data-card-json type="application/json">
+{{ data|organic_card_json }}
+</script>

@@ -63,10 +63,16 @@ class Command(BaseCommand):
             ))
             return
 
-        client = GA4AdminClient(
-            property_id=property_id,
-            service_account_key_path=key_path,
-        )
+        if site and site.google_refresh_token:
+            client = GA4AdminClient(
+                property_id=property_id,
+                refresh_token=site.google_refresh_token,
+            )
+        else:
+            client = GA4AdminClient(
+                property_id=property_id,
+                service_account_key_path=key_path,
+            )
 
         if list_mode:
             self.stdout.write(f"\n📊 Key Events for property {property_id}:")

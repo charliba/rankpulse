@@ -13,9 +13,33 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.CreateModel(
+            name='Project',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=200, verbose_name='Nome do Projeto')),
+                ('slug', models.SlugField(max_length=220, verbose_name='Slug')),
+                ('description', models.TextField(blank=True, verbose_name='Descrição')),
+                ('is_active', models.BooleanField(default=True, verbose_name='Ativo')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='projects', to=settings.AUTH_USER_MODEL, verbose_name='Proprietário')),
+            ],
+            options={
+                'verbose_name': 'Projeto',
+                'verbose_name_plural': 'Projetos',
+                'ordering': ['name'],
+                'unique_together': {('owner', 'slug')},
+            },
+        ),
         migrations.AddField(
             model_name='site',
             name='owner',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='sites', to=settings.AUTH_USER_MODEL, verbose_name='Proprietário'),
+        ),
+        migrations.AddField(
+            model_name='site',
+            name='project',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='sites', to='core.project', verbose_name='Projeto'),
         ),
     ]

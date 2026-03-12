@@ -50,10 +50,16 @@ class Command(BaseCommand):
 
             site_url = site.gsc_site_url or site.url
             try:
-                client = SearchConsoleClient(
-                    service_account_key_path=key_path,
-                    site_url=site_url,
-                )
+                if site.google_refresh_token:
+                    client = SearchConsoleClient(
+                        site_url=site_url,
+                        refresh_token=site.google_refresh_token,
+                    )
+                else:
+                    client = SearchConsoleClient(
+                        service_account_key_path=key_path,
+                        site_url=site_url,
+                    )
                 rows = client.fetch_performance(
                     start_date=start_date,
                     end_date=end_date,

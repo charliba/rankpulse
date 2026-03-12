@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Configurações — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center gap-3 mb-2">
+        <a href="{% url 'core:project_dashboard' project.id %}" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">Configurações</h1>
+    </div>
+    <p class="text-sm text-gray-500">Gerencie as configurações do projeto {{ project.name }}.</p>
+</div>
+
+<!-- Edit Form -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Informações do Projeto</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save">
+        <div class="space-y-4 max-w-lg">
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-sm text-red-500 mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-6">
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Salvar Alterações
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Danger Zone -->
+<div class="bg-white rounded-2xl shadow-sm border border-red-200 p-6" x-data="{ confirmDelete: false }">
+    <h2 class="text-lg font-semibold text-red-700 mb-2">Zona de Perigo</h2>
+    <p class="text-sm text-gray-600 mb-4">
+        Ao excluir o projeto, todos os sites, canais e dados associados serão removidos permanentemente.
+    </p>
+
+    <button @click="confirmDelete = true" x-show="!confirmDelete"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+        Excluir Projeto
+    </button>
+
+    <div x-show="confirmDelete" x-cloak class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-sm font-medium text-red-800 mb-3">
+            Tem certeza que deseja excluir <strong>{{ project.name }}</strong>? Esta ação não pode ser desfeita.
+        </p>
+        <div class="flex gap-2">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+                    Sim, excluir permanentemente
+                </button>
+            </form>
+            <button @click="confirmDelete = false"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

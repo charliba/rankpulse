@@ -1,1 +1,1 @@
-"""Trafic Provider - Apps package."""
+"""RankPulse - Apps package."""

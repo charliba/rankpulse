@@ -9,6 +9,15 @@
 (function () {
     'use strict';
 
+    /* ── capture JS errors for feedback context ─────────── */
+    window.__rkp_errors = window.__rkp_errors || [];
+    window.addEventListener('error', function (e) {
+        window.__rkp_errors.push({
+            msg: e.message, file: e.filename, line: e.lineno, col: e.colno, ts: Date.now()
+        });
+        if (window.__rkp_errors.length > 20) window.__rkp_errors.shift();
+    });
+
     /* ── config ─────────────────────────────────────────── */
     const CONFIG = {
         apiBase: '/chat/',
@@ -19,6 +28,7 @@
         isOpen: false,
         isLoading: false,
         messages: [],
+        sessionId: null,       // tracks current chat session UUID
     };
 
     let el = {};  // referências DOM
@@ -147,6 +157,7 @@
                 sendMessage();
             });
         });
+
     }
 
     /* ── toggle ─────────────────────────────────────────── */
@@ -209,6 +220,7 @@
                 const data = await res.json();
                 if (data.success) {
                     addMessage('ai', data.response);
+                    if (data.session_id) state.sessionId = data.session_id;
                 }
             } else {
                 addMessage('system', 'Erro ao obter resposta. Tente novamente.');

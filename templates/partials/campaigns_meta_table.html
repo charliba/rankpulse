@@ -1,0 +1,169 @@
+<!-- Meta Ads Campaign Table — loaded via HTMX -->
+{% if not data.connected %}
+<div class="text-center py-8">
+    <p class="text-sm text-gray-400">Meta Ads não conectado.</p>
+    <a href="{% url 'core:project_sources' project.id %}" class="text-xs text-primary hover:underline mt-2 inline-block">Configurar Fontes</a>
+</div>
+{% elif data.error %}
+<div class="text-center py-8">
+    <p class="text-sm text-red-400">Erro ao carregar campanhas.</p>
+    <p class="text-xs text-gray-400 mt-1">{{ data.error|truncatechars:120 }}</p>
+</div>
+{% elif not data.campaigns %}
+<div class="text-center py-8">
+    <svg class="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+    </svg>
+    <p class="text-sm text-gray-500">Nenhuma campanha encontrada{% if data.q %} para "{{ data.q }}"{% endif %}.</p>
+</div>
+{% else %}
+<div class="overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-200">
+                {% with base_url="core:api_campaigns_meta" %}
+                <th class="px-3 py-2 text-left font-medium text-gray-500 cursor-pointer hover:text-gray-900"
+                    hx-get="{% url base_url project.id %}?days={{ data.days }}&sort=name&order={% if data.sort == 'name' and data.order == 'asc' %}desc{% else %}asc{% endif %}&q={{ data.q }}"
+                    hx-target="#meta-campaigns-wrap" hx-swap="innerHTML">
+                    Campanha {% if data.sort == 'name' %}{% if data.order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th class="px-3 py-2 text-center font-medium text-gray-500 w-24">Status</th>
+                <th class="px-3 py-2 text-right font-medium text-gray-500 cursor-pointer hover:text-gray-900"
+                    hx-get="{% url base_url project.id %}?days={{ data.days }}&sort=spend&order={% if data.sort == 'spend' and data.order == 'desc' %}asc{% else %}desc{% endif %}&q={{ data.q }}"
+                    hx-target="#meta-campaigns-wrap" hx-swap="innerHTML">
+                    Gasto {% if data.sort == 'spend' %}{% if data.order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th class="px-3 py-2 text-right font-medium text-gray-500 cursor-pointer hover:text-gray-900"
+                    hx-get="{% url base_url project.id %}?days={{ data.days }}&sort=reach&order={% if data.sort == 'reach' and data.order == 'desc' %}asc{% else %}desc{% endif %}&q={{ data.q }}"
+                    hx-target="#meta-campaigns-wrap" hx-swap="innerHTML">
+                    Alcance {% if data.sort == 'reach' %}{% if data.order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th class="px-3 py-2 text-right font-medium text-gray-500 cursor-pointer hover:text-gray-900"
+                    hx-get="{% url base_url project.id %}?days={{ data.days }}&sort=impressions&order={% if data.sort == 'impressions' and data.order == 'desc' %}asc{% else %}desc{% endif %}&q={{ data.q }}"
+                    hx-target="#meta-campaigns-wrap" hx-swap="innerHTML">
+                    Impr. {% if data.sort == 'impressions' %}{% if data.order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th class="px-3 py-2 text-right font-medium text-gray-500 cursor-pointer hover:text-gray-900"
+                    hx-get="{% url base_url project.id %}?days={{ data.days }}&sort=clicks&order={% if data.sort == 'clicks' and data.order == 'desc' %}asc{% else %}desc{% endif %}&q={{ data.q }}"
+                    hx-target="#meta-campaigns-wrap" hx-swap="innerHTML">
+                    Cliques {% if data.sort == 'clicks' %}{% if data.order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th class="px-3 py-2 text-right font-medium text-gray-500 cursor-pointer hover:text-gray-900"
+                    hx-get="{% url base_url project.id %}?days={{ data.days }}&sort=ctr&order={% if data.sort == 'ctr' and data.order == 'desc' %}asc{% else %}desc{% endif %}&q={{ data.q }}"
+                    hx-target="#meta-campaigns-wrap" hx-swap="innerHTML">
+                    CTR {% if data.sort == 'ctr' %}{% if data.order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                <th class="px-3 py-2 text-right font-medium text-gray-500 cursor-pointer hover:text-gray-900"
+                    hx-get="{% url base_url project.id %}?days={{ data.days }}&sort=cpc&order={% if data.sort == 'cpc' and data.order == 'desc' %}asc{% else %}desc{% endif %}&q={{ data.q }}"
+                    hx-target="#meta-campaigns-wrap" hx-swap="innerHTML">
+                    CPC {% if data.sort == 'cpc' %}{% if data.order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </th>
+                {% endwith %}
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+            {% for c in data.campaigns %}
+            <tr class="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                hx-get="{% url 'core:api_campaign_ad_sets_meta' project.id c.id %}"
+                hx-target="#adsets-rows-{{ c.id }}"
+                hx-swap="innerHTML"
+                hx-trigger="click once"
+                onclick="this.classList.toggle('bg-blue-50/30')">
+                <td class="px-3 py-3">
+                    <div class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-gray-400 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        <div>
+                            <div class="font-medium text-gray-900 truncate max-w-[220px]" title="{{ c.name }}">{{ c.name }}</div>
+                            {% if c.objective %}<span class="text-xs text-gray-400">{{ c.objective }}</span>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="px-3 py-3 text-center">
+                    {% if c.status == 'ACTIVE' %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 rounded-full">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>Ativo
+                    </span>
+                    {% elif c.status == 'PAUSED' %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-yellow-50 text-yellow-700 rounded-full">
+                        <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>Pausado
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">
+                        {{ c.status }}
+                    </span>
+                    {% endif %}
+                </td>
+                <td class="px-3 py-3 text-right font-mono text-gray-900">R$ {{ c.spend|floatformat:2 }}</td>
+                <td class="px-3 py-3 text-right text-gray-600">{{ c.reach|default:"0" }}</td>
+                <td class="px-3 py-3 text-right text-gray-600">{{ c.impressions|default:"0" }}</td>
+                <td class="px-3 py-3 text-right text-gray-600">{{ c.clicks|default:"0" }}</td>
+                <td class="px-3 py-3 text-right text-gray-600">{{ c.ctr|floatformat:2 }}%</td>
+                <td class="px-3 py-3 text-right font-mono text-gray-600">R$ {{ c.cpc|floatformat:2 }}</td>
+            </tr>
+            <!-- Budget row -->
+            {% if c.daily_budget %}
+            <tr class="bg-gray-50/60 border-t-0" x-data="{ editing: false, budget: {{ c.daily_budget|default:'0' }}, saving: false }">
+                <td class="px-3 py-1.5 pl-8 text-xs text-gray-500" colspan="5">
+                    <div class="flex items-center gap-2">
+                        <span>📊 Orçamento diário:</span>
+                        <template x-if="!editing">
+                            <span class="font-mono font-medium text-gray-700">R$ <span x-text="budget.toFixed(2)"></span></span>
+                        </template>
+                        <template x-if="editing">
+                            <input type="number" step="0.01" min="1" x-model.number="budget"
+                                class="w-24 px-2 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary"
+                                @keydown.enter="saving=true; fetch('{% url 'core:api_campaign_update_budget_meta' project.id %}', {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},body:JSON.stringify({campaign_id:'{{ c.id }}',daily_budget_brl:budget})}).then(r=>r.json()).then(d=>{if(d.success){editing=false}else{alert(d.error||'Erro')}}).finally(()=>saving=false)"
+                                @keydown.escape="editing=false">
+                        </template>
+                        <template x-if="!editing">
+                            <button @click.stop="editing=true" class="text-primary hover:text-primary-dark text-[10px] font-medium">✏️ Editar</button>
+                        </template>
+                        <template x-if="editing">
+                            <div class="flex gap-1">
+                                <button @click.stop="saving=true; fetch('{% url 'core:api_campaign_update_budget_meta' project.id %}', {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},body:JSON.stringify({campaign_id:'{{ c.id }}',daily_budget_brl:budget})}).then(r=>r.json()).then(d=>{if(d.success){editing=false}else{alert(d.error||'Erro')}}).finally(()=>saving=false)"
+                                    :disabled="saving" class="px-2 py-0.5 bg-green-600 text-white text-[10px] rounded hover:bg-green-700 disabled:opacity-50">
+                                    <span x-text="saving ? '...' : 'Salvar'"></span>
+                                </button>
+                                <button @click.stop="editing=false" class="px-2 py-0.5 bg-gray-300 text-gray-700 text-[10px] rounded hover:bg-gray-400">Cancelar</button>
+                            </div>
+                        </template>
+                    </div>
+                </td>
+                <td colspan="3"></td>
+            </tr>
+            {% endif %}
+            <!-- Ad Sets breakdown (loaded via HTMX on click) -->
+            <tbody id="adsets-rows-{{ c.id }}"></tbody>
+            {% endfor %}
+        </tbody>
+        <tfoot class="border-t border-gray-200 bg-gray-50/50">
+            <tr class="font-medium text-gray-700">
+                <td class="px-3 py-2" colspan="2">Total ({{ data.campaigns|length }} campanhas)</td>
+                <td class="px-3 py-2 text-right font-mono" id="m-total-spend"></td>
+                <td class="px-3 py-2 text-right" id="m-total-reach"></td>
+                <td class="px-3 py-2 text-right" id="m-total-impressions"></td>
+                <td class="px-3 py-2 text-right" id="m-total-clicks"></td>
+                <td class="px-3 py-2 text-right" id="m-total-ctr"></td>
+                <td class="px-3 py-2 text-right font-mono" id="m-total-cpc"></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<script>
+(function(){
+    let spend=0,reach=0,impr=0,clicks=0;
+    {% for c in data.campaigns %}
+    spend+={{ c.spend|default:"0" }};reach+={{ c.reach|default:"0" }};impr+={{ c.impressions|default:"0" }};clicks+={{ c.clicks|default:"0" }};
+    {% endfor %}
+    const f=v=>'R$ '+v.toFixed(2);
+    document.getElementById('m-total-spend').textContent=f(spend);
+    document.getElementById('m-total-reach').textContent=reach.toLocaleString('pt-BR');
+    document.getElementById('m-total-impressions').textContent=impr.toLocaleString('pt-BR');
+    document.getElementById('m-total-clicks').textContent=clicks.toLocaleString('pt-BR');
+    document.getElementById('m-total-ctr').textContent=impr>0?(clicks/impr*100).toFixed(2)+'%':'0%';
+    document.getElementById('m-total-cpc').textContent=clicks>0?f(spend/clicks):'R$ 0.00';
+})();
+</script>
+{% endif %}

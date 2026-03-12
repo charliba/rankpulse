@@ -1,1 +1,1 @@
-"""Trafic Provider - Django Configuration."""
+"""RankPulse - Django Configuration."""

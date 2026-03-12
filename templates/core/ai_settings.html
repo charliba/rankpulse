@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}Provedores de IA — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Provedores de IA</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                Uma API Key por provedor. Escolha modelos para texto e imagem separadamente.
+            </p>
+        </div>
+        <a href="{% url 'core:project_dashboard' project.id %}"
+           class="text-sm text-gray-500 hover:text-gray-700">&larr; Voltar ao Dashboard</a>
+    </div>
+
+    <!-- Provider Cards Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" x-data="aiProviders()">
+
+        <template x-for="p in providers" :key="p.key">
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden transition-all"
+             :class="p.pk ? 'border-green-200' : 'border-gray-200'">
+
+            <!-- Card Header -->
+            <div class="px-5 py-3 border-b flex items-center justify-between"
+                 :class="p.pk ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl" x-text="catalog[p.key].icon"></span>
+                    <div>
+                        <h3 class="font-semibold text-gray-900" x-text="p.label"></h3>
+                        <span x-show="p.pk" class="text-xs text-green-600 font-medium">&#10003; Configurado</span>
+                        <span x-show="!p.pk" class="text-xs text-gray-400">Não configurado</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span x-show="p.is_default_text"
+                          class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium">
+                        Texto
+                    </span>
+                    <span x-show="p.is_default_image"
+                          class="inline-flex items-center px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700 text-xs font-medium">
+                        Imagem
+                    </span>
+                </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="p-5 space-y-4">
+
+                <!-- API Key -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input :type="p._showKey ? 'text' : 'password'"
+                                   x-model="p.api_key"
+                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm font-mono pr-8
+                                          focus:border-primary focus:ring-primary"
+                                   placeholder="Cole sua API Key aqui...">
+                            <button type="button" @click="p._showKey = !p._showKey"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm">
+                                <span x-show="!p._showKey">&#128065;</span>
+                                <span x-show="p._showKey">&#128064;</span>
+                            </button>
+                        </div>
+                        <button type="button" @click="validateKey(p)"
+                                :disabled="!p.api_key.trim() || p._validating"
+                                class="px-3 py-2 rounded-lg text-xs font-medium border transition-colors whitespace-nowrap
+                                       disabled:opacity-40 disabled:cursor-not-allowed"
+                                :class="p._validResult === true
+                                    ? 'bg-green-50 border-green-300 text-green-700'
+                                    : p._validResult === false
+                                        ? 'bg-red-50 border-red-300 text-red-700'
+                                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'">
+                            <span x-show="p._validating" class="animate-pulse">Testando...</span>
+                            <span x-show="!p._validating && p._validResult === true">&#10003; Válida</span>
+                            <span x-show="!p._validating && p._validResult === false">&#10007; Falhou</span>
+                            <span x-show="!p._validating && p._validResult === null">Validar</span>
+                        </button>
+                    </div>
+                    <p x-show="p._validResult === false && p._validError"
+                       class="text-xs text-red-600 mt-1" x-text="p._validError"></p>
+                    <p class="text-xs text-gray-400 mt-1" x-text="catalog[p.key].keyHelp"></p>
+                </div>
+
+                <!-- Text Model -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Modelo de Texto
+                    </label>
+                    <select x-model="p.text_model"
+                            class="w-full rounded-lg border-gray-300 shadow-sm text-sm
+                                   focus:border-primary focus:ring-primary">
+                        <option value="">— Nenhum —</option>
+                        <template x-for="m in catalog[p.key].text" :key="m.value">
+                            <option :value="m.value"
+                                    :selected="p.text_model === m.value"
+                                    x-text="m.label + ' — ' + m.desc"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Image Model (only if provider supports it) -->
+                <div x-show="catalog[p.key].image.length > 0">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Modelo de Imagem
+                    </label>
+                    <select x-model="p.image_model"
+                            class="w-full rounded-lg border-gray-300 shadow-sm text-sm
+                                   focus:border-primary focus:ring-primary">
+                        <option value="">— Nenhum —</option>
+                        <template x-for="m in catalog[p.key].image" :key="m.value">
+                            <option :value="m.value"
+                                    :selected="p.image_model === m.value"
+                                    x-text="m.label + ' — ' + m.desc"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Defaults -->
+                <div class="flex items-center gap-6 pt-3 border-t border-gray-100">
+                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" x-model="p.is_default_text"
+                               class="rounded border-gray-300 text-primary focus:ring-primary">
+                        Padrão para Texto
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                           x-show="catalog[p.key].image.length > 0">
+                        <input type="checkbox" x-model="p.is_default_image"
+                               class="rounded border-gray-300 text-primary focus:ring-primary">
+                        Padrão para Imagem
+                    </label>
+                </div>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <button x-show="p.pk" type="button" @click="removeProvider(p)"
+                        class="text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
+                    Remover
+                </button>
+                <span x-show="!p.pk"></span>
+                <button type="button" @click="saveProvider(p)"
+                        :disabled="!p.api_key.trim()"
+                        class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium
+                               hover:bg-primary-dark transition-colors
+                               disabled:opacity-40 disabled:cursor-not-allowed">
+                    Salvar
+                </button>
+            </div>
+        </div>
+        </template>
+
+    </div>
+
+    <!-- Helper Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800">
+        <p class="font-medium mb-1">&#128161; Como funciona</p>
+        <ul class="list-disc list-inside space-y-1 text-blue-700">
+            <li>Adicione a API Key <strong>uma vez</strong> por provedor — todos os modelos daquele provedor ficam disponíveis.</li>
+            <li>Escolha modelos diferentes para <strong>Texto</strong> (auditorias, posts, chat) e <strong>Imagem</strong> (geração visual).</li>
+            <li>Marque <strong>Padrão para Texto</strong> ou <strong>Padrão para Imagem</strong> para definir qual provedor será usado automaticamente.</li>
+            <li>Clique em <strong>Validar</strong> para testar a conexão antes de salvar.</li>
+        </ul>
+    </div>
+
+</div>
+
+<script>
+function aiProviders() {
+    const CATALOG = {
+        openai: {
+            icon: '🤖',
+            keyHelp: 'Obtenha em platform.openai.com/api-keys',
+            text: [
+                { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', desc: 'Rápido e econômico' },
+                { value: 'gpt-4.1', label: 'GPT-4.1', desc: 'Alta qualidade' },
+                { value: 'gpt-4o', label: 'GPT-4o', desc: 'Multimodal' },
+                { value: 'gpt-4o-mini', label: 'GPT-4o Mini', desc: 'Multimodal econômico' },
+            ],
+            image: [
+                { value: 'dall-e-3', label: 'DALL-E 3', desc: 'Alta qualidade' },
+            ],
+        },
+        google: {
+            icon: '✨',
+            keyHelp: 'Obtenha em aistudio.google.com/apikey',
+            text: [
+                { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', desc: 'Rápido e econômico' },
+                { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', desc: 'Mais potente' },
+                { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', desc: 'Estável' },
+            ],
+            image: [
+                { value: 'gemini-2.5-flash-image', label: 'Gemini Flash Image', desc: 'Rápido e grátis' },
+            ],
+        },
+        anthropic: {
+            icon: '🧠',
+            keyHelp: 'Obtenha em console.anthropic.com/settings/keys',
+            text: [
+                { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4', desc: 'Equilíbrio custo/qualidade' },
+                { value: 'claude-opus-4-20250514', label: 'Claude Opus 4', desc: 'Mais potente' },
+            ],
+            image: [],
+        },
+        xai: {
+            icon: '⚡',
+            keyHelp: 'Obtenha em console.x.ai',
+            text: [
+                { value: 'grok-3', label: 'Grok 3', desc: 'Potente' },
+                { value: 'grok-3-mini', label: 'Grok 3 Mini', desc: 'Rápido' },
+            ],
+            image: [],
+        },
+    };
+
+    const raw = {{ providers_json|safe }};
+    const providers = raw.map(p => ({
+        ...p,
+        _showKey: false,
+        _validating: false,
+        _validResult: null,
+        _validError: '',
+    }));
+
+    return {
+        catalog: CATALOG,
+        providers,
+        projectId: {{ project.id }},
+        csrf: '{{ csrf_token }}',
+
+        async validateKey(p) {
+            if (!p.api_key.trim()) return;
+            p._validating = true;
+            p._validResult = null;
+            p._validError = '';
+            try {
+                const resp = await fetch(`/project/${this.projectId}/ai-settings/test/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': this.csrf,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `provider=${p.key}&api_key=${encodeURIComponent(p.api_key)}`,
+                });
+                const data = await resp.json();
+                p._validResult = data.ok;
+                p._validError = data.error || '';
+            } catch (e) {
+                p._validResult = false;
+                p._validError = 'Erro de rede';
+            }
+            p._validating = false;
+        },
+
+        saveProvider(p) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/project/${this.projectId}/ai-settings/save/`;
+            const fields = {
+                csrfmiddlewaretoken: this.csrf,
+                provider: p.key,
+                api_key: p.api_key,
+                text_model: p.text_model,
+                image_model: p.image_model,
+            };
+            if (p.is_default_text) fields.is_default_text = 'on';
+            if (p.is_default_image) fields.is_default_image = 'on';
+            for (const [k, v] of Object.entries(fields)) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = k;
+                input.value = v;
+                form.appendChild(input);
+            }
+            document.body.appendChild(form);
+            form.submit();
+        },
+
+        removeProvider(p) {
+            if (!p.pk || !confirm('Remover configuração deste provedor?')) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/project/${this.projectId}/ai-settings/${p.pk}/delete/`;
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrfmiddlewaretoken';
+            input.value = this.csrf;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        },
+    };
+}
+</script>
+{% endblock %}

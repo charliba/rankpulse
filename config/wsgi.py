@@ -1,4 +1,4 @@
-"""WSGI config for Trafic Provider."""
+"""WSGI config for RankPulse."""
 import os
 
 from django.core.wsgi import get_wsgi_application

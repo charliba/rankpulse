@@ -10,12 +10,12 @@
 
 | Item | Valor |
 |------|-------|
-| **Projeto** | RankPulse — Admin de Trafego Organico |
+| **Projeto** | RankPulse — Plataforma SaaS de Gerenciamento de Tráfego Pago e Orgânico |
 | **VPS** | Hostinger 31.97.171.87 |
 | **Dominio** | https://rankpulse.cloud |
 | **Framework** | Django 6.0.2 |
 | **Repositorio** | github.com/charliba/rankpulse (branch: `main`) |
-| **Database** | PostgreSQL (prod) / SQLite (dev) |
+| **Database** | SQLite (dev e prod atual) |
 | **Porta** | 8002 (Gunicorn) |
 | **VPS Path** | `/root/rankpulse` |
 
@@ -176,8 +176,9 @@ MCC Account: 259-958-1821 (rankPulse)
 
 | App | Descricao | Modelos Principais |
 |-----|-----------|-------------------|
-| `core` | Sites, KPIs, eventos, snapshots, integracoes | Site, GA4EventDefinition, KPIGoal, WeeklySnapshot |
-| `analytics` | GA4 MP, Search Console, Google Ads | GA4EventLog, SearchConsoleData, GA4Report |
+| `core` | Projetos, sites, KPIs, alertas, auditoria IA | Project, Site, GA4EventDefinition, KPIGoal, WeeklySnapshot, AlertRule, AlertEvent, AuditReport, AuditRecommendation |
+| `analytics` | GA4, GSC, Google Ads, Meta Ads | GA4EventLog, SearchConsoleData, GA4Report |
+| `channels` | Multi-plataforma canais | Channel, ChannelCredential |
 | `seo` | Auditor SEO, keyword tracking | SEOAudit, PageScore, KeywordTracking |
 | `content` | Gerador de conteudo IA | ContentCluster, ContentTopic, GeneratedPost |
 | `checklists` | Checklists semanais/mensais | ChecklistTemplate, ChecklistInstance |
@@ -198,6 +199,75 @@ MCC Account: 259-958-1821 (rankPulse)
 | `seed_beezle` | core | Popular dados iniciais do beezle.io |
 | `seed_checklists` | core | Popular templates de checklists |
 | `audit_seo` | seo | Rodar auditoria SEO |
+
+---
+
+## Overlay/Guided Tour — Tela Congelada
+
+### LIÇÃO: Tour overlay travava a tela inteira
+**Data:** Mar/2026
+
+**Problema:** Após implementar um Guided Tour com overlay `fixed inset-0 z-[9999] bg-black/50`, a tela ficava escura e não rolava em TODAS as páginas.
+**Causa:** O tour verificava apenas a existência de `data-tour="sidebar"` (que existia em todas as páginas via `base.html`), ativando o overlay sempre.
+**Solução:** Remover o guided tour completamente do `base.html`. Uma versão futura pode usar tour apenas no onboarding.
+**Regra:** Overlays com `fixed inset-0` + `z-index` altíssimo são perigosos — sempre garantir que tenham condição estrita de ativação.
+
+---
+
+## Deploy e Servidor (continuação)
+
+### LIÇÃO: 502 Bad Gateway — Race Condition no Deploy
+**Data:** Mar/2026
+
+**Problema:** Após deploy, servidor retornava 502 Bad Gateway.
+**Causa:** `pkill gunicorn` no `deploy.py` mata o processo mas a porta 8002 não é liberada imediatamente. O `time.sleep(3)` pode não ser suficiente.
+**Diagnóstico:** Criamos scripts Paramiko para verificar: `fuser 8002/tcp`, `ps aux | grep gunicorn`, `curl localhost:8002`.
+**Solução:** Matar com `fuser -k 8002/tcp`, esperar 3-5 segundos, então reiniciar Gunicorn.
+**Prevenção:** Considerar adicionar retry com verificação de porta no `deploy.py`.
+
+---
+
+## Migrations
+
+### LIÇÃO: Dessincronia de migrations local vs servidor
+**Data:** Mar/2026
+
+**Problema:** `OperationalError: no such table: core_auditreport` em produção.
+**Causa:** A migration `0005` foi regenerada localmente (agora incluía AuditReport), mas o servidor já tinha a `0005` antiga aplicada (sem AuditReport). Django marcou como "aplicada" e pulou.
+**Diagnóstico:** Verificar `django_migrations` table no VPS: `SELECT * FROM django_migrations WHERE app='core'`.
+**Solução:** Criar migration manual `0007_auditreport_auditrecommendation.py` dependendo da `0006` existente, com `CreateModel` apenas para as tabelas faltantes.
+**Regra:** SEMPRE verificar `showmigrations` no VPS **ANTES** de criar novas migrations locais. Se houver dessincronia, criar migration manual que dependa da última aplicada no servidor.
+
+---
+
+## Database
+
+### LIÇÃO: Produção usa SQLite (não PostgreSQL)
+**Data:** Mar/2026
+
+**Problema:** Docs incorretamente diziam que produção usava PostgreSQL.
+**Realidade:** Tanto dev quanto prod usam SQLite (`db.sqlite3`).
+**Nota:** Eventualmente migrar para PostgreSQL em produção pode ser necessário para performance/concorrência, mas atualmente não é o caso.
+
+---
+
+## Auditoria IA (audit_engine.py)
+
+### LIÇÃO: Sistema de auditoria com auto-apply
+**Data:** Mar/2026
+
+O RankPulse agora tem um motor de auditoria IA (`apps/core/audit_engine.py`) que:
+1. Faz scraping do site do negócio para contexto
+2. Coleta dados de Google Ads, Meta Ads e SEO/GSC
+3. Envia ao OpenAI (gpt-4.1-mini) com prompt de especialista
+4. Gera recomendações com score, impacto, e ações aplicáveis
+
+**Regra #1:** NUNCA sugere alteração de orçamento (hardcoded no prompt).
+**Auto-apply:** Recomendações com `action_type` definido podem ser aplicadas em 1 clique. Tipos: negative_keywords, sitelinks, callouts, snippets, keywords, targeting_meta, indexing_gsc.
+
+---
+
+**Última atualização:** Março 2026
 
 ---
 

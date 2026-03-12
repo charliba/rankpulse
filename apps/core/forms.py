@@ -200,9 +200,6 @@ class IntegrationsForm(forms.ModelForm):
             # GSC
             "gsc_site_url",
             "gsc_verified",
-            # Service Account Keys
-            "gsc_service_account_key",
-            "ga4_service_account_key",
         ]
         widgets = {
             "ga4_measurement_id": forms.TextInput(attrs={
@@ -218,12 +215,4 @@ class IntegrationsForm(forms.ModelForm):
                 "class": _INPUT, "placeholder": "https://seusite.com.br",
             }),
             "gsc_verified": forms.CheckboxInput(attrs={"class": _CHECK}),
-            "gsc_service_account_key": forms.Textarea(attrs={
-                "class": _TEXTAREA, "rows": 4,
-                "placeholder": '{"type": "service_account", "project_id": "...", ...}',
-            }),
-            "ga4_service_account_key": forms.Textarea(attrs={
-                "class": _TEXTAREA, "rows": 4,
-                "placeholder": '{"type": "service_account", "project_id": "...", ...}',
-            }),
         }
